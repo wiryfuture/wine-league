@@ -45,8 +45,12 @@ COPY *patch /builddir/patches/.
 RUN cd /builddir/temp && git am /builddir/patches/isb.patch
 
 # Build packages
-RUN cd /builddir/out64 && /builddir/temp/configure --enable-win64 && ccache make -j$(expr $(nproc) \+ 1)
-RUN cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig /builddir/temp/configure --with-wine64=/builddir/out64 && ccache make -j$(expr $(nproc) \+ 1)
+# 64 bit
+RUN cd /builddir/out64 && /builddir/temp/configure --enable-win64 
+RUN cd /builddir/out64 && ccache make -j$(expr $(nproc) \+ 1)
+# 32 bit
+RUN cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig /builddir/temp/configure --with-wine64=/builddir/out64
+RUN cd /builddir/out32 && ccache make -j$(expr $(nproc) \+ 1)
 # export to folder
 CMD mv -R /builddir/out32/. /exports/.
 
