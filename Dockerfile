@@ -52,7 +52,7 @@ RUN cd /builddir/out64 && ccache make -j$(expr $(nproc) \+ 1)
 RUN cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig /builddir/temp/configure --with-wine64=/builddir/out64
 RUN cd /builddir/out32 && ccache make -j$(expr $(nproc) \+ 1)
 # export to folder
-CMD mv -R /builddir/out32/. /exports/.
+CMD cp -r /builddir/out32/. /exports/.
 
 # If you switch to experimental mode like in this answer, you actually get a working ccache https://stackoverflow.com/a/56833198
 # build command: docker build . -t wiryfuture/fedora-wine-builder --build-arg WINE_GIT=git://source.winehq.org/git/wine
