@@ -1,7 +1,7 @@
 # Due to how 32bit with 64bit support works in wine, we have to build the 64bit wine package first
 FROM fedora:latest
 
-RUN --mount=type=cache,target=/ccache/
+RUN --mount=type=cache,target=/ccache
 ENV CCACHE_DIR=/ccache
 
 # Install builds tools
@@ -22,38 +22,50 @@ RUN dnf groupinstall "Development Tools" -y
     # RPMFusion deps
     RUN dnf install -y gstreamer1-devel.i686 gstreamer1-plugins-base-devel.i686 gstreamer1-plugins-good.i686 gstreamer1-plugins-good-extras.i686 gstreamer1-plugins-ugly.i686 gstreamer1-plugins-bad-free.i686 gstreamer1-plugins-bad-free-devel.i686 gstreamer1-plugins-bad-free-extras.i686
 
-    RUN dnf install -y ccache git
-
-# Totally legit git identity
-RUN git config --global user.email "docker@example.com"
-RUN git config --global user.name "buildkit"
+    RUN dnf install -y ccache git cmake.x86_64 cmake.i686
+      # Totally legit git identity
+      RUN git config --global user.email "docker@example.com"
+      RUN git config --global user.name "buildkit"
+      # Set up ccache to pretend to be the other compilers
+      RUN ln -s /usr/bin/ccache /usr/local/bin/gcc && \
+      ln -s /usr/bin/ccache /usr/local/bin/g++ && \
+      ln -s /usr/bin/ccache /usr/local/bin/cc && \
+      ln -s /usr/bin/ccache /usr/local/bin/c++
 
 WORKDIR /builddir
-RUN mkdir -p /builddir/temp /builddir/out64 /builddir/out32 /builddir/patches
+RUN mkdir -p /builddir/wine /builddir/out64 /builddir/out32 /builddir/patches 
 
 # Wine git url
 ARG WINE_GIT
 # Get wine git source into container dir
-RUN git clone $WINE_GIT /builddir/temp/.
+RUN git clone $WINE_GIT /builddir/wine/.
 
 # Apply the magic patches
-RUN cd /builddir/temp && git am https://bugs.winehq.org/attachment.cgi?id=70550&action=diff&context=patch&collapsed=&headers=1&format=raw
-RUN cd /builddir/temp && git am https://bugs.winehq.org/attachment.cgi?id=70530&action=diff&context=patch&collapsed=&headers=1&format=raw
+RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70550&action=diff&context=patch&collapsed=&headers=1&format=raw
+RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70530&action=diff&context=patch&collapsed=&headers=1&format=raw
 
 # apply this repo's patches
 COPY *patch /builddir/patches/.
-RUN cd /builddir/temp && git am /builddir/patches/isb.patch
+RUN cd /builddir/wine && git am /builddir/patches/isb.patch
 
 # Build packages
 # 64 bit
-RUN cd /builddir/out64 && /builddir/temp/configure --enable-win64 
-RUN cd /builddir/out64 && ccache make -j$(expr $(nproc) \+ 1)
+#RUN cd /builddir/out64 && ../wine/configure --enable-win64 
+#RUN cd /builddir/out64 && ccache make -j$(expr $(nproc) \+ 1)
+RUN cd /builddir/out64 && ../wine/configure --enable-win64 && ccache make -j$(expr $(nproc) \+ 1)
+
 # 32 bit
-RUN cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig /builddir/temp/configure --with-wine64=/builddir/out64
-RUN cd /builddir/out32 && ccache make -j$(expr $(nproc) \+ 1)
+#RUN cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig ../wine/configure --with-wine64=../out64
+#RUN cd /builddir/out32 && ccache cmake -j$(expr $(nproc) \+ 1)
+RUN cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig ../wine/configure --with-wine64=../out64/ && ccache make -j$(expr $(nproc) \+ 1)
+
+# Move everything to one folder
+RUN mkdir /builddir/build && mv /builddir/out32 /builddir/build && mv /builddir/out64 /builddir/build && mv /builddir/wine /builddir/build 
+
 # export to folder
-CMD cp -r /builddir/out32/. /exports/.
+CMD cp -r /builddir/build /exports && chmod -R 777 /exports
 
 # If you switch to experimental mode like in this answer, you actually get a working ccache https://stackoverflow.com/a/56833198
+# building this WILL take a while
 # build command: docker build . -t wiryfuture/fedora-wine-builder --build-arg WINE_GIT=git://source.winehq.org/git/wine
 # final command: docker run -v /folder/for/wine:/exports wiryfuture/fedora-wine-builder
