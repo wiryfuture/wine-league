@@ -33,7 +33,7 @@ RUN dnf groupinstall "Development Tools" -y
       ln -s /usr/bin/ccache /usr/local/bin/c++
 
 WORKDIR /builddir
-RUN mkdir -p /builddir/wine /builddir/out64 /builddir/out32 /builddir/patches 
+RUN mkdir -p /builddir/wine /builddir/out32 /builddir/patches 
 
 # Wine git url
 ARG WINE_GIT
