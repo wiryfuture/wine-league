@@ -47,7 +47,6 @@ RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70530&
 # apply this repo's patches
 COPY *patch /builddir/patches/.
 RUN cd /builddir/wine && git am /builddir/patches/isb.patch
-RUN cd /builddir/wine && git am /builddir/patches/0001-handle-log.patch
 RUN cd /builddir/wine && git am /builddir/patches/0001-pretty-sure-im-just-breaking-wine-at-this-point.patch
 
 # Build packages
