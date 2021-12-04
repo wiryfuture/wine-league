@@ -16,7 +16,7 @@ index 492400b17a7..2f8e7053cbf 100644
          FIXME( "Unsupported timeout\n" );
      if (handle)
 -        FIXME( "Unsupported cancel handle\n" );
-+        FIXME( "Unsupported cancel handle\n %s", handle );
++        FIXME( "Unsupported cancel handle\n %u", handle );
  
      ret = getaddrinfoW( name, servname, (struct addrinfo *)hints, result, overlapped, completion_routine );
      if (ret) return ret;
