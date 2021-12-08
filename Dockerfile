@@ -48,7 +48,7 @@ RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70530&
 COPY *patch /builddir/patches/.
 RUN cd /builddir/wine && git am /builddir/patches/isb.patch
 RUN cd /builddir/wine && git am /builddir/patches/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
-RUN cd /builddir/wine && git am /builddir/patches/0001-prevent-unused-int-declaration.patch
+RUN cd /builddir/wine && git am /builddir/patches/0001-remove-ret-values-from-getaddrinfoexw-so-handle-happ.patch
 RUN cd /builddir/wine && git am /builddir/patches/0001-Hope-I-haven-t-broken-the-dns-api.patch
 RUN cd /builddir/wine && git am /builddir/patches/0002-force-use-of-remote-dns.patch
 # Build packages
