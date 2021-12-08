@@ -49,7 +49,7 @@ COPY *patch /builddir/patches/.
 RUN cd /builddir/wine && git am /builddir/patches/isb.patch
 RUN cd /builddir/wine && git am /builddir/patches/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
 RUN cd /builddir/wine && git am /builddir/patches/0001-pretend-getaddressinfo-is-working.patch
-
+RUN cd /builddir/wine && git am /builddir/patches/0001-Hope-I-haven-t-broken-the-dns-api.patch
 # Build packages
 
 # NOTE:

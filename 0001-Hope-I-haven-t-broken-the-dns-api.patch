@@ -1,0 +1,60 @@
+From 35ef80677cd66ca7998062cb488e260ae1b42878 Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Wed, 8 Dec 2021 14:31:53 +0000
+Subject: [PATCH] Hope I haven't broken the dns api
+
+---
+ dlls/dnsapi/libresolv.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/dlls/dnsapi/libresolv.c b/dlls/dnsapi/libresolv.c
+index 0871348fb22..9af2c72d9c6 100644
+--- a/dlls/dnsapi/libresolv.c
++++ b/dlls/dnsapi/libresolv.c
+@@ -38,7 +38,7 @@
+ # include <arpa/nameser.h>
+ #endif
+ #ifdef HAVE_RESOLV_H
+-# include <resolv.h>
++# include <resolv.h> /* This *should* import _res */
+ #endif
+ #ifdef HAVE_NETDB_H
+ # include <netdb.h>
+@@ -63,7 +63,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(dnsapi);
+ /* call once per thread on systems that have per-thread _res */
+ static void init_resolver( void )
+ {
+-    if (!(_res.options & RES_INIT)) res_init();
++    if (!(_res.options & RES_INIT)) res_ninit( &_res );
+ }
+ 
+ static unsigned long map_options( DWORD options )
+@@ -91,6 +91,7 @@ static unsigned long map_options( DWORD options )
+     if (options & DNS_QUERY_RESERVED)
+         FIXME( "option DNS_QUERY_RESERVED not implemented\n" );
+     if (options & DNS_QUERY_WIRE_ONLY)
++        /* Need to add smth here */
+         FIXME( "option DNS_QUERY_WIRE_ONLY not implemented\n" );
+     if (options & DNS_QUERY_NO_WIRE_QUERY)
+         FIXME( "option DNS_QUERY_NO_WIRE_QUERY not implemented\n" );
+@@ -334,7 +335,7 @@ static NTSTATUS resolv_query( void *args )
+     init_resolver();
+     _res.options |= map_options( params->options );
+ 
+-    if ((len = res_query( params->name, ns_c_in, params->type, params->buf, *params->len )) < 0)
++    if ((len = res_nquery( &_res, params->name, ns_c_in, params->type, params->buf, *params->len )) < 0)
+         ret = map_h_errno( h_errno );
+     else
+         *params->len = len;
+@@ -367,7 +368,7 @@ static NTSTATUS wow64_resolv_get_searchlist( void *args )
+         ULongToPtr(params32->len)
+     };
+ 
+-    return resolv_get_searchlist( &params );
++    return resolv_get_searchlist( &params ); /* I can't find a definition for this on the internet ?? */
+ }
+ 
+ static NTSTATUS wow64_resolv_get_serverlist( void *args )
+-- 
+2.33.1
+
