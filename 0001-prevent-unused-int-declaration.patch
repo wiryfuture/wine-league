@@ -1,0 +1,25 @@
+From 48f7ca3104df85dee3e0ae04d21caf19a806562b Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Wed, 8 Dec 2021 18:05:59 +0000
+Subject: [PATCH] prevent unused int declaration
+
+---
+ dlls/ws2_32/protocol.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
+index 492400b17a7..47c2e6c6d46 100644
+--- a/dlls/ws2_32/protocol.c
++++ b/dlls/ws2_32/protocol.c
+@@ -419,7 +419,7 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+ 
+     ret = getaddrinfoW( name, servname, (struct addrinfo *)hints, result, overlapped, completion_routine );
+     if (ret) return ret;
+-    if (handle) *handle = (HANDLE)0xdeadbeef;
++    /*if (handle) *handle = (HANDLE)0xdeadbeef;*/
+     return 0;
+ }
+ 
+-- 
+2.33.1
+
