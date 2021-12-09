@@ -45,13 +45,13 @@ RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70550&
 RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70530&action=diff&context=patch&collapsed=&headers=1&format=raw
 
 # apply this repo's patches
-COPY ./patches/* /builddir/patches/.
-RUN cd /builddir/wine && git am /builddir/patches/isb/isb.patch
-RUN cd /builddir/wine && git am /builddir/patches/isb/0005-try-decrease-number-of-unecessary-resets.patch
-RUN cd /builddir/wine && git am /builddir/patches/server_ioctl/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
-RUN cd /builddir/wine && git am /builddir/patches/getaddrinfo/0001-remove-ret-values-from-getaddrinfoexw-so-handle-happ.patch
-RUN cd /builddir/wine && git am /builddir/patches/dnsapi/0001-Hope-I-haven-t-broken-the-dns-api.patch
-RUN cd /builddir/wine && git am /builddir/patches/dnsapi/0002-fix-patch.patch
+COPY *patch /builddir/patches/.
+RUN cd /builddir/wine && git am /builddir/patches/isb.patch
+RUN cd /builddir/wine && git am /builddir/patches/0005-try-decrease-number-of-unecessary-resets.patch
+RUN cd /builddir/wine && git am /builddir/patches/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
+RUN cd /builddir/wine && git am /builddir/patches/0001-remove-ret-values-from-getaddrinfoexw-so-handle-happ.patch
+RUN cd /builddir/wine && git am /builddir/patches/0001-Hope-I-haven-t-broken-the-dns-api.patch
+RUN cd /builddir/wine && git am /builddir/patches/0002-fix-patch.patch
 # Build packages
 
 # NOTE:
