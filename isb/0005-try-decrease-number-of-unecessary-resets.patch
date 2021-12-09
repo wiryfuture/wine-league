@@ -1,0 +1,24 @@
+From b84ad7fe63d5204f1c00ef2bc2bd9f52e3074498 Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Thu, 9 Dec 2021 23:31:51 +0000
+Subject: [PATCH 5/5] try decrease number of unecessary resets
+
+---
+ dlls/ws2_32/socket.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/dlls/ws2_32/socket.c b/dlls/ws2_32/socket.c
+index 443f47a7f54..608fd86d842 100644
+--- a/dlls/ws2_32/socket.c
++++ b/dlls/ws2_32/socket.c
+@@ -2437,6 +2437,7 @@ INT WINAPI WSAIoctl(SOCKET s, DWORD code, LPVOID in_buff, DWORD in_size, LPVOID
+             ISB += (int) floor((RBUFF - SBUFF) * 0.5);
+             /* TODO:  use some sort of anti-congestion algorithm to get a better estimate for an ideal sbuff */
+         }
++        else ISB = RBUFF;
+         out_buff = &ISB;
+         /*
+             If overlap true and completion func present, do completion func
+-- 
+2.33.1
+
