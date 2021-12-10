@@ -61,15 +61,10 @@ ARG THREADS
 COPY build.sh ./.
 RUN ./build.sh
 
-FROM fedora:latest as exporter
-
-WORKDIR /builddir
-# Grab our builds from previous stage
-RUN mkdir -p /builddir/build
-COPY --from=builder /builddir/out32 /builddir/out64 /builddir/wine /builddir/build/
-
+# Copy to one folder
+RUN mkdir -p /builddir/build && cp -r /builddir/out32 /builddir/build/. && cp -r /builddir/out64 /builddir/build/. && cp -r /builddir/wine /builddir/build/. 
 # Copy our builds to the export folder
-CMD cp -r /builddir/build /exports && chmod -R 777 /exports
+CMD cp -r /builddir/build/* /exports/. && chmod -R 777 /exports
 
 # If you switch to experimental mode like in this answer, you actually get a working ccache https://stackoverflow.com/a/56833198
 # building this WILL take a while
