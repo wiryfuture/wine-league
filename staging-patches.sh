@@ -28,8 +28,8 @@ if [ "$STAGING_TAG" != "notag" ] ; then
 fi
 
 # Preparation? 
-cd /builddir/wine && git reset --hard HEAD && git clean -xdf
-cd /builddir/wine-staging && git reset --hard HEAD && git clean -xdf
+#cd /builddir/wine && git reset --hard HEAD && git clean -xdf
+#cd /builddir/wine-staging && git reset --hard HEAD && git clean -xdf
 
 command="/builddir/wine-staging/patches/patchinstall.sh DESTDIR=/builddir/wine --all ""$PATCH_EXCLUDES"
 ( ( $command ) )
