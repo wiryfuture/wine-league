@@ -27,6 +27,10 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-bf4_ping.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/alternative_patch_by_using_a_fake_cs_segment.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-6.15-fix.patch
 
+/builddir/wine/dlls/winevulkan/make_vulkan
+/builddir/wine/tools/make_requests
+cd /builddir/wine && autoreconf -f
+
 # Apply my patches (testing)
 # cd /builddir/wine && patch -Np1 < /builddir/patches/
 cd /builddir/wine && patch -Np1 < /builddir/patches/isb.patch
