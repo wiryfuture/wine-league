@@ -40,6 +40,11 @@ ARG WINE_GIT
 # Get wine git source into container dir
 RUN git clone $WINE_GIT /builddir/wine/.
 
+# Get wine staging patches
+RUN git clone https://github.com/wine-staging/wine-staging.git
+# Apply wine staging patches
+RUN ./wine-staging/patches/patchinstall.sh DESTDIR=/builddir/wine --all --backend=git-am
+
 # Apply the magic patches
 RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70550&action=diff&context=patch&collapsed=&headers=1&format=raw
 RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70530&action=diff&context=patch&collapsed=&headers=1&format=raw
