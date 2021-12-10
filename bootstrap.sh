@@ -19,10 +19,6 @@ BUILD64BIT=${BUILD64BIT:="1"}
 dnf groupinstall -y "C Development Tools and Libraries" "Development Tools"
 dnf install -y ccache git
 
-# 'Bootstrap' ccache
-#   # Cacche links
-ln -s /usr/bin/ccache /usr/local/bin/gcc && ln -s /usr/bin/ccache /usr/local/bin/g++ && ln -s /usr/bin/ccache /usr/local/bin/cc && ln -s /usr/bin/ccache /usr/local/bin/c++
-
 # Enable RPMFusion repo
 dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm
 
