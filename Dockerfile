@@ -43,7 +43,8 @@ RUN git clone $WINE_GIT /builddir/wine/.
 # Get wine staging patches
 RUN git clone https://github.com/wine-staging/wine-staging.git
 # Apply wine staging patches
-RUN ./wine-staging/patches/patchinstall.sh DESTDIR=/builddir/wine --all -W /builddir/wine-staging/patches/loader-KeyboardLayouts
+RUN ./wine-staging/patches/patchinstall.sh DESTDIR=/builddir/wine --all -W /builddir/wine-staging/patches/loader-KeyboardLayouts/0002-user32-Improve-GetKeyboardLayoutList.patch
+
 
 # Apply the magic patches
 RUN cd /builddir/wine && git am https://bugs.winehq.org/attachment.cgi?id=70550&action=diff&context=patch&collapsed=&headers=1&format=raw
