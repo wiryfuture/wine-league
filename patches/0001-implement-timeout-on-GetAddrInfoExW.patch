@@ -1,6 +1,6 @@
-From dd300c614fb0018569e4d640c9af5ae28721737a Mon Sep 17 00:00:00 2001
+From 18927a789363e2ef39c825e56b6ddf9fbb499924 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sat, 11 Dec 2021 18:34:13 +0000
+Date: Sat, 11 Dec 2021 18:59:30 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 164 insertions(+), 9 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..7b3bd479263 100644
+index 492400b17a7..5f42f91ace2 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -23,6 +23,7 @@
@@ -32,7 +32,7 @@ index 492400b17a7..7b3bd479263 100644
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
 +};
 +
-+static int getaddrinfoW_NONBLOCK( getaddrinfoWParams context* )
++static int getaddrinfoW_wSTRUCT( getaddrinfoWParams context* )
 +{
 +    int ret = EAI_MEMORY, len, i;
 +    char *nodenameA = NULL, *servnameA = NULL;
@@ -184,7 +184,7 @@ index 492400b17a7..7b3bd479263 100644
 +    readParams.overlapped = overlapped;
 +    readParams.completion_routine = completion_routine;
 +
-+    int pthread = pthread_create(getaddrinfoW_thread, NULL, getaddrinfoW_NONBLOCK, readParams );
++    int pthread = pthread_create(getaddrinfoW_thread, NULL, getaddrinfoW_wSTRUCT, readParams );
 +    if (pthread != 0) /* Non zero on creation of pthread means an error occured */
 +    {
 +        SetLastError( WSAECONNABORTED );
