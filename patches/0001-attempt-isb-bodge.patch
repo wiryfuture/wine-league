@@ -1,0 +1,225 @@
+From c91208466070314a724029fe07383cc82fe6b9f2 Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Sat, 11 Dec 2021 00:12:25 +0000
+Subject: [PATCH] attempt isb bodge
+
+---
+ dlls/ws2_32/socket.c | 195 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 195 insertions(+)
+
+diff --git a/dlls/ws2_32/socket.c b/dlls/ws2_32/socket.c
+index 2db441bee3c..cbd41cf44d9 100644
+--- a/dlls/ws2_32/socket.c
++++ b/dlls/ws2_32/socket.c
+@@ -27,6 +27,7 @@
+  */
+ 
+ #include "ws2_32_private.h"
++#include <math.h>
+ 
+ #define FILE_USE_FILE_POINTER_POSITION ((LONGLONG)-2)
+ 
+@@ -2257,6 +2258,200 @@ INT WINAPI WSAIoctl(SOCKET s, DWORD code, LPVOID in_buff, DWORD in_size, LPVOID
+         return ret ? -1 : 0;
+     }
+ 
++    /* Get (S)end (B)acklog (V)alue of the socket connection */
++    /* The League of Legends client calls this for some god forsaken reason */
++    /* Params:
++        - SOCKET; socket = s
++            Socket identifer
++        - DWORD; dwIoControlCode = code; (SIO_IDEAL_SEND_BACKLOG_QUERY)
++        !UNUSED - LPVOID; lpvInBuffer = in_buff; (NULL)
++        !UNUSED - DWORD; cbInBuffer = in_size; (0)
++        - LPVOID; output buffer = out_buff
++            Should be ULONG type if overlapped or completion params are null
++        - DWORD; output buffer size = out_size 
++            Should be at least ULONG size
++        - LPDWORD; bytes returned = ret_size
++            Number of bytes stored in output buffer
++                Small output buffer => DWORD (0)
++                overlapped = null => DWORD != 0
++                overlapped != null => completion may occur later DWORD may be 0
++                    Status can be retrieved when completion method has completed
++        - LPWSAOVERLAPPED; overlapped struct = overlapped
++            socket has no overlapped attrib. => ignore param
++            socket has overlap attrib. => perform as async, must be valid wsaoverlapped struct
++                return immediately, completion method exec. on operation completion 
++                    function does not return until operation returns or errors
++        - LPWSAOVERLAPPED;_COMPLETION_ROUTINE completion routine = completion
++            pointer to completion routine, ran when completion occurs
++            non-overlapped socket => ignore param
++
++      Returns:
++        - Success = (0)
++        - Fail or pending = SOCKET_ERROR
++            Err Codes:
++                - WSA_IO_PENDING = overlapped operation intitiated, will be completed later
++                - WSA_OPERATION_ABORTED = overlapped operation stopped due to socket closure or SIO_FLUSH IOCTL command
++            /   - WSAEFAULT = inbuffer, outbuffer, bytesreturned, overlapped or completion param isn't fully in user(address)space
++                    Hopefully the 'borrowed' code can do this sufficiently
++            ?   - WSAEINPROGRESS = function invoked while callback in process
++                    how do you check if a blocking func. is in progress?
++                        Doesn't seem to be a practical way to do this...
++            x   - WSAEINTR = blocking operation interrupted
++                    WSACancelBlockingCall was removed in ws2 rev 2.2.0, can still be used in winsock.dll and wsock32.dll
++            /   - WSAEINVAL = control code param is not a valid command, or is not acceptable, or applicable to this socket.
++                    outbuffer < ULONG datatype size/length => WSAEINVAL
++            ?   - WSAENETDOWN = network subsytem failed
++                    How do you even handle this
++            /   - WSAENOPROTOOPT = socket option not supported on selected protocol
++                    On 1.1 there are only SOCK_DGRAM and SOCK_STREAM
++                    On 2>= there is SOCK_STREAM, SOCK_DGRAM, SOCK_RAW, SOCK_RDM and SOCK_SEQPACKET
++            /   - (kinda) - WSAENOTCONN = socket not connected
++            /   - WSAENOTSOCK = socket param is not a socket
++            ?   - WSAEOPNOTSUPP = IOCTL command is not supported; when this ioctl is not supported by the transport provider or this ioctl is run on a datagram socket
++                    When the socket is a datagram, it should get error WSAENOPROTOOPT anyway??
++    */
++    case SIO_IDEAL_SEND_BACKLOG_QUERY:
++    {
++        /* Declarations */
++        int RBUFF;
++        int SBUFF;
++        int MAXMSGSIZE;
++        int ISB;
++        int optLen; /* integer datatype size */
++        int optVal1;
++        int optVal2;
++        /*int optVal3;*/
++        WSAPROTOCOL_INFOW info;
++
++        /* Code */
++        optLen = sizeof(int);
++        
++
++        /* 
++            I think this basically checks if the socket param is actually a socket because other error WSAENOTSOCK code use it 
++        */
++        if ( !socket_list_find( s ) )
++        {
++            SetLastError( WSAENOTSOCK );
++            return -1;
++        }
++        /*
++            Polls for if a socket closes to throw the WSA_OPERATION_ABORTED error
++                Somehow this needs to be able to be given close and SIO_FLUSH IOCTL events
++        */ /* 
++        if ( () => { 
++            int WSAAPIevents = WSAEventSelect(s, null, FD_CLOSE )
++        }) 
++        {
++            SetLastError( WSA_OPERATION_ABORTED );
++            return -1;
++        } */
++        /*
++            Just stealing this from elsewhere in this dll ( i think it just checks the params exist? )
++                Even simpler though so definitely can incur errors (with the sizes i think)
++        */
++        if (!in_buff || !in_size || !out_buff || !out_size)
++        {
++            SetLastError( WSAEFAULT );
++            return -1;
++        }
++        /* 
++            Get byte size of out_buff, compare to the length of ULONG (8bytes/64bits)
++        */
++        if (sizeof(out_buff) < 8)
++        {
++            SetLastError( WSAEINVAL );
++            return -1;
++        }
++        /*
++            Check connection is open
++                - accept con is false
++                - pause accept is true
++                - conditional accept is true
++                Not sure if we should check for SO_BROADCAST being false also (left that under just in case)
++
++            There **HAS** to be a better way of doing this, surely?
++        */
++    
++        getsockopt(s, SOL_SOCKET, SO_ACCEPTCONN, (char*)&optVal1, &optLen);
++        
++        getsockopt(s, SOL_SOCKET, SO_CONDITIONAL_ACCEPT, (char*)&optVal2, &optLen);
++        /*
++        getsockopt(s, SOL_SOCKET, SO_BROADCAST, (char*)&optVal3, &optLen);
++        */
++
++        if ( !optVal1 && optVal2 /* && !optVal3*/)
++        {
++            SetLastError( WSAENOTCONN );
++            return -1;
++        }
++        /*
++            Check if socket uses an unsupported protocol (datagram-types)
++        */
++        if (!ws_protocol_info( s, TRUE, &info, &optLen )) return -1;
++        /* I think these are all the datagram types  */
++        if (
++            info.iSocketType == SOCK_DGRAM || 
++            info.iSocketType == SOCK_RDM || 
++            info.iSocketType == SOCK_SEQPACKET
++        ) 
++        {
++            SetLastError( WSAENOPROTOOPT );
++            return -1;
++        }  
++        /*
++            Get receive buffer
++        */
++        getsockopt( s, SOL_SOCKET, SO_RCVBUF, (char*)&RBUFF, &optLen);
++        /*
++            Get send buffer
++        */
++        getsockopt( s, SOL_SOCKET, SO_SNDBUF, (char*)&SBUFF, &optLen);
++        /*
++            Get max (socket) message size
++        */
++
++        getsockopt( s, SOL_SOCKET, SO_MAX_MSG_SIZE, (char*)&MAXMSGSIZE, &optLen);
++
++        if ( !RBUFF || !SBUFF || !MAXMSGSIZE ) 
++        {
++            return SOCKET_ERROR;
++        }
++
++        /*
++            Ideally, this should go a bit like this:
++                receive window = receive buffer - (last_byte_received - last_byte_read)
++                int RWND = RBUFF - (LST_BYT_REC - LST_BYT_RD);
++    
++                If server bandwidth is higher than user bandwidth, use user bandwidth as max. 
++                if user bandwidth higher than server, use server bandwidth. 
++                ISB = (RBUFF / BDWDTH_DLY) > 1 ? BDWIDTH_DLY : RBUF;
++
++                set SOCK BUFFER to ISB; via SIO_IDEAL_SEND_BACKLOG_CHANGE ?? or is this meant to somehow send it back to the caller; but it's meant to return 0??
++                EXEC COMPLETION_ROUTINE;
++        */
++        if (RBUFF > SBUFF) /* very low effort bodge? */
++        {
++            /* Increase the ideal send buffer size by half the diff between send buff and rec buff */
++            ISB = SBUFF + (int) floor((RBUFF - SBUFF) * 0.5);
++            /* TODO:  use some sort of anti-congestion algorithm to get a better estimate for an ideal sbuff */
++        }
++        else ISB = (int) floor (RBUFF * 0.8);
++        out_buff = &ISB;
++        /*
++            If overlap true and completion func present, do completion func
++        */
++        if ( overlapped && completion )
++        {
++            SetLastError( WSA_IO_PENDING );
++            /*completion;  how do you use the completion param? */
++            return -1;
++        }
++        else {
++            return 0;
++        }
++    }
++
+     default:
+         FIXME( "unimplemented ioctl %s\n", debugstr_wsaioctl( code ) );
+         /* fall through */
+-- 
+2.33.1
+

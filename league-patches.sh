@@ -33,9 +33,7 @@ cd /builddir/wine && autoreconf -f
 
 # Apply my patches (testing)
 # cd /builddir/wine && patch -Np1 < /builddir/patches/
-cd /builddir/wine && patch -Np1 < /builddir/patches/isb.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/0005-try-decrease-number-of-unecessary-resets.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/0001-attempt-isb-bodge.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/0001-remove-ret-values-from-getaddrinfoexw-so-handle-happ.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/0001-Hope-I-haven-t-broken-the-dns-api.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/0002-query_wire_only-hotfix.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/0001-possible-query-wire-only-hotfix.patch

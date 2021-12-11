@@ -1,14 +1,14 @@
-From 35ef80677cd66ca7998062cb488e260ae1b42878 Mon Sep 17 00:00:00 2001
+From 0201f384300046877cf8e5b68042cf58a50d78d5 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Wed, 8 Dec 2021 14:31:53 +0000
-Subject: [PATCH] Hope I haven't broken the dns api
+Date: Sat, 11 Dec 2021 00:16:22 +0000
+Subject: [PATCH] possible query wire only hotfix
 
 ---
- dlls/dnsapi/libresolv.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ dlls/dnsapi/libresolv.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
 
 diff --git a/dlls/dnsapi/libresolv.c b/dlls/dnsapi/libresolv.c
-index 0871348fb22..9af2c72d9c6 100644
+index 0871348fb22..9c3d2312963 100644
 --- a/dlls/dnsapi/libresolv.c
 +++ b/dlls/dnsapi/libresolv.c
 @@ -38,7 +38,7 @@
@@ -29,15 +29,21 @@ index 0871348fb22..9af2c72d9c6 100644
  }
  
  static unsigned long map_options( DWORD options )
-@@ -91,6 +91,7 @@ static unsigned long map_options( DWORD options )
+@@ -90,8 +90,12 @@ static unsigned long map_options( DWORD options )
+         FIXME( "option DNS_QUERY_DONT_RESET_TTL_VALUES not implemented\n" );
      if (options & DNS_QUERY_RESERVED)
          FIXME( "option DNS_QUERY_RESERVED not implemented\n" );
-     if (options & DNS_QUERY_WIRE_ONLY)
-+        /* Need to add smth here */
+-    if (options & DNS_QUERY_WIRE_ONLY)
++    if (options & DNS_QUERY_WIRE_ONLY) 
++    {
++        ret &= ~RES_RECURSE; /* Prevent recursion for the answer */
++        ret &= RES_AAONLY; /* Only accept authoratative answers */
          FIXME( "option DNS_QUERY_WIRE_ONLY not implemented\n" );
++    }
      if (options & DNS_QUERY_NO_WIRE_QUERY)
          FIXME( "option DNS_QUERY_NO_WIRE_QUERY not implemented\n" );
-@@ -334,7 +335,7 @@ static NTSTATUS resolv_query( void *args )
+     if (options & DNS_QUERY_BYPASS_CACHE)
+@@ -334,7 +338,7 @@ static NTSTATUS resolv_query( void *args )
      init_resolver();
      _res.options |= map_options( params->options );
  
@@ -46,7 +52,7 @@ index 0871348fb22..9af2c72d9c6 100644
          ret = map_h_errno( h_errno );
      else
          *params->len = len;
-@@ -367,7 +368,7 @@ static NTSTATUS wow64_resolv_get_searchlist( void *args )
+@@ -367,7 +371,7 @@ static NTSTATUS wow64_resolv_get_searchlist( void *args )
          ULongToPtr(params32->len)
      };
  
