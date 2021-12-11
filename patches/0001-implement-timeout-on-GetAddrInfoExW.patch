@@ -1,25 +1,32 @@
-From 18927a789363e2ef39c825e56b6ddf9fbb499924 Mon Sep 17 00:00:00 2001
+From ddf1b472170c344ad2a0c758424c3b90ac22daa9 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sat, 11 Dec 2021 18:59:30 +0000
+Date: Sat, 11 Dec 2021 21:52:07 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
- dlls/ws2_32/protocol.c | 173 ++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 164 insertions(+), 9 deletions(-)
+ dlls/ws2_32/protocol.c | 176 ++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 167 insertions(+), 9 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..5f42f91ace2 100644
+index 492400b17a7..3efa5a45324 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
-@@ -23,6 +23,7 @@
+@@ -18,11 +18,13 @@
+  * Lesser General Public License for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public
+- * License along with this library; if not, write to the Free Software
++ * License along with this librIary; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
   */
  
  #include "ws2_32_private.h"
-+#include <pthread.h>
++#include "processthreadsapi.h"
++#include <sys/time.h>
  
  WINE_DEFAULT_DEBUG_CHANNEL(winsock);
  WINE_DECLARE_DEBUG_CHANNEL(winediag);
-@@ -394,6 +395,121 @@ end:
+@@ -394,6 +396,121 @@ end:
      return ret;
  }
  
@@ -136,25 +143,24 @@ index 492400b17a7..5f42f91ace2 100644
 +        free( local_nodenameW );
 +    free( nodenameA );
 +    free( servnameA );
-+    pthread_exit(ret);
++    return ret;
 +}
  
  /***********************************************************************
   *      GetAddrInfoExW   (ws2_32.@)
-@@ -404,6 +520,12 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+@@ -404,6 +521,11 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
                             LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine, HANDLE *handle )
  {
      int ret;
-+    pthread_t getaddrinfoW_thread;
++    HANDLE getaddrinfoW_thread;
++    lpThreadId getaddrinfoW_id;
 +    getaddrinfoWParams readParams;
-+    struct timeval start_time;
-+    ULONG time_from;
-+    ULONG time_now;
-+    struct timespec timer;
++    struct timeval start;
++    struct timeval now;
  
      TRACE( "name %s, servname %s, namespace %u, namespace_id %s)\n",
             debugstr_w(name), debugstr_w(servname), namespace, debugstr_guid(namespace_id) );
-@@ -412,15 +534,48 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+@@ -412,15 +534,51 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
          FIXME( "Unsupported namespace %u\n", namespace );
      if (namespace_id)
          FIXME( "Unsupported namespace_id %s\n", debugstr_guid(namespace_id) );
@@ -162,12 +168,7 @@ index 492400b17a7..5f42f91ace2 100644
 -        FIXME( "Unsupported timeout\n" );
 -    if (handle)
 -        FIXME( "Unsupported cancel handle\n" );
--
--    ret = getaddrinfoW( name, servname, (struct addrinfo *)hints, result, overlapped, completion_routine );
--    if (ret) return ret;
--    if (handle) *handle = (HANDLE)0xdeadbeef;
--    return 0;
-+    if (!timout|| (!timeout.tv_sec && !timeout.tv_usec) || timeout.tv_sec == 0 && timeout.tv_usec == 0)
++    if (!timout || (!timeout.tv_sec && !timeout.tv_usec) || timeout.tv_sec == 0 && timeout.tv_usec == 0)
 +    {
 +        /*
 +            Reasonable defualt timeout time of 3 seconds
@@ -183,26 +184,33 @@ index 492400b17a7..5f42f91ace2 100644
 +    readParams.res = result;
 +    readParams.overlapped = overlapped;
 +    readParams.completion_routine = completion_routine;
-+
-+    int pthread = pthread_create(getaddrinfoW_thread, NULL, getaddrinfoW_wSTRUCT, readParams );
-+    if (pthread != 0) /* Non zero on creation of pthread means an error occured */
+ 
+-    ret = getaddrinfoW( name, servname, (struct addrinfo *)hints, result, overlapped, completion_routine );
+-    if (ret) return ret;
+-    if (handle) *handle = (HANDLE)0xdeadbeef;
+-    return 0;
++    getaddrinfoW_thread = CreateThread(NULL, 0, getaddrinfoW_wSTRUCT, readParams, 0, getaddrinfoW_id);
++    if ( !getaddrinfoW_thread ) /* Null on creation (no handle) means an error occured */
 +    {
 +        SetLastError( WSAECONNABORTED );
 +        return WSAECONNABORTED;
 +    }
-+    /*
-+        Create timer with value timeout,
-+        then wait until it is over or 
-+    */
-+    timer.tv_sec = timeout.tv_sec;
-+    timer.tv_nsec = timeout.tv_usec*1000;
-+
-+    if ( pthread_timedjoin_np(pthread, ret, timer) != 0)
++    /* get curent time */
++    gettimeofday(&start, NULL);
++    now = start;
++    GetExitCodeThread(getaddrinfoW_thread, ret);
++    while ( (now.tv_usec+(now.tv_sec*1000000)) - (start.tv_usec+(start.tv_sec*1000000)) < (timeout.tv_usec+(timout.tv_sec*1000000) ) )
 +    {
-+        pthread_cancel( getaddrinfoW_thread);
++        gettimeofday(&now, NULL);
++        if ( ret != STILL_ACTIVE) break;
++        GetExitCodeThread(getaddrinfoW_thread, ret);
++    }
++    if ( ret == STILL_ACTIVE )
++    {
++        /*TerminateThread(getaddrinfoW_thread, NULL) */ /* can't really tell what will get terminated so we kinda just have to let it leak */
 +        SetLastError( WSAETIMEDOUT );
 +        return WSAETIMEDOUT;
-+    } 
++    }
 +    else if (ret == 0)
 +    {
 +        if (handle) *handle = (HANDLE)0xdeadbeef;
