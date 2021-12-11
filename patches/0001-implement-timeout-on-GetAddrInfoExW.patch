@@ -1,17 +1,17 @@
-From ad0cdfc0e09f2ad017afeeb9631f86e0093cc59d Mon Sep 17 00:00:00 2001
+From f69e8ecb92f3cabd6f45bb243e8a94cb40649772 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sat, 11 Dec 2021 22:25:55 +0000
+Date: Sat, 11 Dec 2021 23:05:38 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
- dlls/ws2_32/protocol.c | 177 ++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 168 insertions(+), 9 deletions(-)
+ dlls/ws2_32/protocol.c | 187 ++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 177 insertions(+), 10 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..492915d9561 100644
+index 492400b17a7..1f46793cb1f 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
-@@ -18,11 +18,14 @@
+@@ -18,11 +18,13 @@
   * Lesser General Public License for more details.
   *
   * You should have received a copy of the GNU Lesser General Public
@@ -21,13 +21,12 @@ index 492400b17a7..492915d9561 100644
   */
  
  #include "ws2_32_private.h"
-+#include "windef.h"
-+#include "winbase.h"
-+#include <sys/time.h>
++#include "windows.h"
++#include "processthreadsapi.h"
  
  WINE_DEFAULT_DEBUG_CHANNEL(winsock);
  WINE_DECLARE_DEBUG_CHANNEL(winediag);
-@@ -394,6 +397,121 @@ end:
+@@ -394,6 +396,121 @@ end:
      return ret;
  }
  
@@ -149,19 +148,21 @@ index 492400b17a7..492915d9561 100644
  
  /***********************************************************************
   *      GetAddrInfoExW   (ws2_32.@)
-@@ -404,6 +522,11 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+@@ -404,6 +521,13 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
                             LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine, HANDLE *handle )
  {
      int ret;
 +    HANDLE getaddrinfoW_thread;
 +    lpThreadId getaddrinfoW_id;
 +    getaddrinfoWParams readParams;
-+    struct timeval start;
-+    struct timeval now;
++    LARGE_INTEGER Frequency;
++    LARGE_INTEGER StartingTime;
++    LARGE_INTEGER EndingTime;
++    LARGE_INTEGER ElapsedMicroseconds;
  
      TRACE( "name %s, servname %s, namespace %u, namespace_id %s)\n",
             debugstr_w(name), debugstr_w(servname), namespace, debugstr_guid(namespace_id) );
-@@ -412,15 +535,51 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+@@ -412,15 +536,58 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
          FIXME( "Unsupported namespace %u\n", namespace );
      if (namespace_id)
          FIXME( "Unsupported namespace_id %s\n", debugstr_guid(namespace_id) );
@@ -169,6 +170,11 @@ index 492400b17a7..492915d9561 100644
 -        FIXME( "Unsupported timeout\n" );
 -    if (handle)
 -        FIXME( "Unsupported cancel handle\n" );
+-
+-    ret = getaddrinfoW( name, servname, (struct addrinfo *)hints, result, overlapped, completion_routine );
+-    if (ret) return ret;
+-    if (handle) *handle = (HANDLE)0xdeadbeef;
+-    return 0;
 +    if (!timout || (!timeout.tv_sec && !timeout.tv_usec) || timeout.tv_sec == 0 && timeout.tv_usec == 0)
 +    {
 +        /*
@@ -185,26 +191,29 @@ index 492400b17a7..492915d9561 100644
 +    readParams.res = result;
 +    readParams.overlapped = overlapped;
 +    readParams.completion_routine = completion_routine;
- 
--    ret = getaddrinfoW( name, servname, (struct addrinfo *)hints, result, overlapped, completion_routine );
--    if (ret) return ret;
--    if (handle) *handle = (HANDLE)0xdeadbeef;
--    return 0;
++
 +    getaddrinfoW_thread = CreateThread(NULL, 0, getaddrinfoW_wSTRUCT, readParams, 0, getaddrinfoW_id);
 +    if ( !getaddrinfoW_thread ) /* Null on creation (no handle) means an error occured */
 +    {
 +        SetLastError( WSAECONNABORTED );
 +        return WSAECONNABORTED;
 +    }
-+    /* get curent time */
-+    gettimeofday(&start, NULL);
-+    now = start;
-+    GetExitCodeThread(getaddrinfoW_thread, ret);
-+    while ( (now.tv_usec+(now.tv_sec*1000000)) - (start.tv_usec+(start.tv_sec*1000000)) < (timeout.tv_usec+(timout.tv_sec*1000000) ) )
++    /* Get time since started, and subtract from time started now */
++    QueryPerformanceFrequency(&Frequency);
++    QueryPerformanceCounter(&StartingTime);
++    EndingTime = StartingTime;
++    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
++    ElapsedMicroseconds.QuadPart *= 1000000;
++    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
++
++    while ((long)ElapsedMicroseconds.QuadPart < (long)(timeout.tv_usec+(timout.tv_sec*1000000) ) )
 +    {
-+        gettimeofday(&now, NULL);
-+        if ( ret != STILL_ACTIVE) break;
 +        GetExitCodeThread(getaddrinfoW_thread, ret);
++        if ( ret != STILL_ACTIVE) break;
++        QueryPerformanceCounter(&EndingTime);
++        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
++        ElapsedMicroseconds.QuadPart *= 1000000;
++        ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 +    }
 +    if ( ret == STILL_ACTIVE )
 +    {
