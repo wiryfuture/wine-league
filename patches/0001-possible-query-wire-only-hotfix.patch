@@ -1,34 +1,16 @@
-From 0201f384300046877cf8e5b68042cf58a50d78d5 Mon Sep 17 00:00:00 2001
+From f0721c4a2ec3a7d3e4d217f2c03276195e51c2df Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sat, 11 Dec 2021 00:16:22 +0000
+Date: Sat, 11 Dec 2021 00:24:54 +0000
 Subject: [PATCH] possible query wire only hotfix
 
 ---
- dlls/dnsapi/libresolv.c | 14 +++++++++-----
- 1 file changed, 9 insertions(+), 5 deletions(-)
+ dlls/dnsapi/libresolv.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/dlls/dnsapi/libresolv.c b/dlls/dnsapi/libresolv.c
-index 0871348fb22..9c3d2312963 100644
+index 0871348fb22..9fcbe08c116 100644
 --- a/dlls/dnsapi/libresolv.c
 +++ b/dlls/dnsapi/libresolv.c
-@@ -38,7 +38,7 @@
- # include <arpa/nameser.h>
- #endif
- #ifdef HAVE_RESOLV_H
--# include <resolv.h>
-+# include <resolv.h> /* This *should* import _res */
- #endif
- #ifdef HAVE_NETDB_H
- # include <netdb.h>
-@@ -63,7 +63,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(dnsapi);
- /* call once per thread on systems that have per-thread _res */
- static void init_resolver( void )
- {
--    if (!(_res.options & RES_INIT)) res_init();
-+    if (!(_res.options & RES_INIT)) res_ninit( &_res );
- }
- 
- static unsigned long map_options( DWORD options )
 @@ -90,8 +90,12 @@ static unsigned long map_options( DWORD options )
          FIXME( "option DNS_QUERY_DONT_RESET_TTL_VALUES not implemented\n" );
      if (options & DNS_QUERY_RESERVED)
@@ -43,24 +25,6 @@ index 0871348fb22..9c3d2312963 100644
      if (options & DNS_QUERY_NO_WIRE_QUERY)
          FIXME( "option DNS_QUERY_NO_WIRE_QUERY not implemented\n" );
      if (options & DNS_QUERY_BYPASS_CACHE)
-@@ -334,7 +338,7 @@ static NTSTATUS resolv_query( void *args )
-     init_resolver();
-     _res.options |= map_options( params->options );
- 
--    if ((len = res_query( params->name, ns_c_in, params->type, params->buf, *params->len )) < 0)
-+    if ((len = res_nquery( &_res, params->name, ns_c_in, params->type, params->buf, *params->len )) < 0)
-         ret = map_h_errno( h_errno );
-     else
-         *params->len = len;
-@@ -367,7 +371,7 @@ static NTSTATUS wow64_resolv_get_searchlist( void *args )
-         ULongToPtr(params32->len)
-     };
- 
--    return resolv_get_searchlist( &params );
-+    return resolv_get_searchlist( &params ); /* I can't find a definition for this on the internet ?? */
- }
- 
- static NTSTATUS wow64_resolv_get_serverlist( void *args )
 -- 
 2.33.1
 
