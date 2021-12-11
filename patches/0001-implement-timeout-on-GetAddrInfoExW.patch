@@ -1,6 +1,6 @@
-From f69e8ecb92f3cabd6f45bb243e8a94cb40649772 Mon Sep 17 00:00:00 2001
+From 4f9736393b8789a61acd283304cba7d8819da214 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sat, 11 Dec 2021 23:05:38 +0000
+Date: Sat, 11 Dec 2021 23:12:25 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 177 insertions(+), 10 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..1f46793cb1f 100644
+index 492400b17a7..2f2e1069948 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,11 +18,13 @@
@@ -22,7 +22,7 @@ index 492400b17a7..1f46793cb1f 100644
  
  #include "ws2_32_private.h"
 +#include "windows.h"
-+#include "processthreadsapi.h"
++#include "winbase.h"
  
  WINE_DEFAULT_DEBUG_CHANNEL(winsock);
  WINE_DECLARE_DEBUG_CHANNEL(winediag);
