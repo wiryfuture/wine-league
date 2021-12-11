@@ -1,0 +1,217 @@
+From 3a039f5846d9790c570c0a098747faf2402b97c0 Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Sat, 11 Dec 2021 18:05:58 +0000
+Subject: [PATCH] implement timeout on GetAddrInfoExW
+
+---
+ dlls/ws2_32/protocol.c | 173 ++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 164 insertions(+), 9 deletions(-)
+
+diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
+index 492400b17a7..9a6afabd4fa 100644
+--- a/dlls/ws2_32/protocol.c
++++ b/dlls/ws2_32/protocol.c
+@@ -23,6 +23,7 @@
+  */
+ 
+ #include "ws2_32_private.h"
++#include <pthread.h>
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(winsock);
+ WINE_DECLARE_DEBUG_CHANNEL(winediag);
+@@ -394,6 +395,121 @@ end:
+     return ret;
+ }
+ 
++struct getaddrinfoWParams {
++    WCHAR *nodename;
++    WCHAR *servname;
++    struct addrinfo *hints;
++    ADDRINFOEXW **res;
++    OVERLAPPED *overlapped;
++    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
++};
++
++static int getaddrinfoW_NONBLOCK( getaddrinfoWParams context* )
++{
++    int ret = EAI_MEMORY, len, i;
++    char *nodenameA = NULL, *servnameA = NULL;
++    struct addrinfo *resA;
++    WCHAR *local_nodenameW = (WCHAR *)context.nodename;
++
++    context.*res = NULL;
++    if (context.nodename)
++    {
++        /* Is this an IDN? Most likely if any char is above the Ascii table, this
++         * is the simplest validation possible, further validation will be done by
++         * the native getaddrinfo() */
++        for (i = 0; context.nodename[i]; i++)
++        {
++            if (context.nodename[i] > 'z')
++                break;
++        }
++        if (context.nodename[i])
++        {
++            if (context.hints && (context.hints->ai_flags & AI_DISABLE_IDN_ENCODING))
++            {
++                /* Name requires conversion but it was disabled */
++                ret = WSAHOST_NOT_FOUND;
++                SetLastError( ret );
++                goto end;
++            }
++
++            len = IdnToAscii( 0, context.nodename, -1, NULL, 0 );
++            if (!len)
++            {
++                ERR("Failed to convert %s to punycode\n", debugstr_w(context.nodename));
++                ret = EAI_FAIL;
++                goto end;
++            }
++            if (!(local_nodenameW = malloc( len * sizeof(WCHAR) ))) goto end;
++            IdnToAscii( 0, context.nodename, -1, local_nodenameW, len );
++        }
++    }
++    if (local_nodenameW)
++    {
++        len = WideCharToMultiByte( CP_ACP, 0, local_nodenameW, -1, NULL, 0, NULL, NULL );
++        if (!(nodenameA = malloc( len ))) goto end;
++        WideCharToMultiByte( CP_ACP, 0, local_nodenameW, -1, nodenameA, len, NULL, NULL );
++    }
++    if (context.servname)
++    {
++        len = WideCharToMultiByte( CP_ACP, 0, context.servname, -1, NULL, 0, NULL, NULL );
++        if (!(context.servnameA = malloc( len ))) goto end;
++        WideCharToMultiByte( CP_ACP, 0, context.servname, -1, servnameA, len, NULL, NULL );
++    }
++
++    if (context.overlapped)
++    {
++        struct getaddrinfo_args *args;
++
++        if (context.overlapped->hEvent && context.completion_routine)
++        {
++            ret = WSAEINVAL;
++            goto end;
++        }
++
++        if (!(args = malloc( sizeof(*args) + sizeof(*args->context.hints) ))) goto end;
++        args->overlapped = context.overlapped;
++        args->completion_routine = context.completion_routine;
++        args->result = context.res;
++        args->nodename = nodenameA;
++        args->servname = servnameA;
++        if (context.hints)
++        {
++            args->hints = (struct addrinfo *)(args + 1);
++            args->hints->ai_flags    = context.hints->ai_flags;
++            args->hints->ai_family   = context.hints->ai_family;
++            args->hints->ai_socktype = context.hints->ai_socktype;
++            args->hints->ai_protocol = context.hints->ai_protocol;
++        }
++        else args->hints = NULL;
++
++        overlapped->Internal = WSAEINPROGRESS;
++        if (!TrySubmitThreadpoolCallback( getaddrinfo_callback, args, NULL ))
++        {
++            free( args );
++            ret = GetLastError();
++            goto end;
++        }
++
++        if (local_nodenameW != context.nodename)
++            free( local_nodenameW );
++        SetLastError( ERROR_IO_PENDING );
++        return ERROR_IO_PENDING;
++    }
++
++    ret = getaddrinfo( nodenameA, servnameA, context.hints, &resA );
++    if (!ret)
++    {
++        context.*res = addrinfo_list_AtoW( resA );
++        freeaddrinfo( resA );
++    }
++
++end:
++    if (local_nodenameW != context.nodename)
++        free( local_nodenameW );
++    free( nodenameA );
++    free( servnameA );
++    return (void *) ret;
++}
+ 
+ /***********************************************************************
+  *      GetAddrInfoExW   (ws2_32.@)
+@@ -404,6 +520,12 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+                            LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine, HANDLE *handle )
+ {
+     int ret;
++    pthread_t getaddrinfoW_thread;
++    getaddrinfoWParams readParams;
++    struct timeval start_time;
++    ULONG time_from;
++    ULONG time_now;
++    struct timespec timer;
+ 
+     TRACE( "name %s, servname %s, namespace %u, namespace_id %s)\n",
+            debugstr_w(name), debugstr_w(servname), namespace, debugstr_guid(namespace_id) );
+@@ -412,15 +534,48 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+         FIXME( "Unsupported namespace %u\n", namespace );
+     if (namespace_id)
+         FIXME( "Unsupported namespace_id %s\n", debugstr_guid(namespace_id) );
+-    if (timeout)
+-        FIXME( "Unsupported timeout\n" );
+-    if (handle)
+-        FIXME( "Unsupported cancel handle\n" );
+-
+-    ret = getaddrinfoW( name, servname, (struct addrinfo *)hints, result, overlapped, completion_routine );
+-    if (ret) return ret;
+-    if (handle) *handle = (HANDLE)0xdeadbeef;
+-    return 0;
++    if (!timout|| (!timeout.tv_sec && !timeout.tv_usec) || timeout.tv_sec == 0 && timeout.tv_usec == 0)
++    {
++        /*
++            Reasonable defualt timeout time of 3 seconds
++            For some reason, windows doesn't have a default one.
++            We do NOT want an infinite timeout. Ever!
++        */
++        timeout.tv_sec = 3; 
++    }
++    /* Args for a pthread function have to go in a struct */
++    readParams.nodename = name;
++    readParams.servname = servname;
++    readParams.hints = (struct addrinfo *)hints;
++    readParams.res = result;
++    readParams.overlapped = overlapped;
++    readParams.completion_routine = completion_routine;
++
++    int pthread = pthread_create(getaddrinfoW_thread, NULL, getaddrinfoW_NONBLOCK, readParams );
++    if (pthread != 0) /* Non zero on creation of pthread means an error occured */
++    {
++        SetLastError( WSAECONNABORTED );
++        return WSAECONNABORTED;
++    }
++    /*
++        Create timer with value timeout,
++        then wait until it is over or 
++    */
++    timer.tv_sec = timeout.tv_sec;
++    timer.tv_nsec = timeout.tv_usec*1000;
++
++    if ( pthread_timedjoin_np(pthread, ret, timer) != 0)
++    {
++        pthread_cancel( getaddrinfoW_thread);
++        SetLastError( WSAETIMEDOUT );
++        return WSAETIMEDOUT;
++    } 
++    else if (ret == 0)
++    {
++        if (handle) *handle = (HANDLE)0xdeadbeef;
++        return ret;
++    }
++    else return ret;
+ }
+ 
+ 
+-- 
+2.33.1
+

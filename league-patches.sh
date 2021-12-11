@@ -35,5 +35,5 @@ cd /builddir/wine && autoreconf -f
 # cd /builddir/wine && patch -Np1 < /builddir/patches/
 cd /builddir/wine && patch -Np1 < /builddir/patches/0001-attempt-isb-bodge.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/0001-remove-ret-values-from-getaddrinfoexw-so-handle-happ.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/0001-implement-timeout-on-GetAddrInfoExW.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/0001-possible-query-wire-only-hotfix.patch
