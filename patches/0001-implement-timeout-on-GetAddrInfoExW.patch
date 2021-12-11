@@ -1,6 +1,6 @@
-From 3a039f5846d9790c570c0a098747faf2402b97c0 Mon Sep 17 00:00:00 2001
+From be2e2414fe0d0ef341e6c8506e15bf2a4b0313cb Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sat, 11 Dec 2021 18:05:58 +0000
+Date: Sat, 11 Dec 2021 18:09:10 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 164 insertions(+), 9 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..9a6afabd4fa 100644
+index 492400b17a7..7b3bd479263 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -23,6 +23,7 @@
@@ -136,7 +136,7 @@ index 492400b17a7..9a6afabd4fa 100644
 +        free( local_nodenameW );
 +    free( nodenameA );
 +    free( servnameA );
-+    return (void *) ret;
++    pthread_exit(ret);
 +}
  
  /***********************************************************************
