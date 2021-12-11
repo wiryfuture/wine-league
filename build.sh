@@ -22,7 +22,7 @@ THREADS=${THREADS:=$(nproc)}
 
 if [ "$BUILD64BIT" != 0 ] ; then
     # 64 bit build process (includes 32 bit. will take about twice the time because.)
-    cd /builddir/out64 && CC="ccache gcc" ../wine/configure --enable-win64 && make -j"$THREADS"
+    cd /builddir/out64 && CC="ccache gcc -lpthread" ../wine/configure --enable-win64 && make -j"$THREADS"
     cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure --with-wine64=../out64 && make -j"$THREADS"
     else
     cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure && make -j"$THREADS"
