@@ -1,14 +1,14 @@
-From 35915e407d07d59579329eae2a5b67ebd03c9d72 Mon Sep 17 00:00:00 2001
+From 71971abee8d04512e88635f56cd25af30bd65736 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 18:27:58 +0000
+Date: Sun, 12 Dec 2021 19:03:36 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
- dlls/ws2_32/protocol.c | 190 ++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 178 insertions(+), 12 deletions(-)
+ dlls/ws2_32/protocol.c | 193 ++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 181 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..3567951188e 100644
+index 492400b17a7..13070e8ccdc 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -36,7 +36,7 @@ index 492400b17a7..3567951188e 100644
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
 +};
 +
-+static DWORD WINAPI getaddrinfoW_wSTRUCT( struct getaddrinfoWParams context);
++static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID pParam );
  unixlib_handle_t ws_unix_handle = 0;
  
  #define WS_CALL(func, params) __wine_unix_call( ws_unix_handle, ws_unix_ ## func, params )
@@ -44,31 +44,32 @@ index 492400b17a7..3567951188e 100644
  static char *get_fqdn(void)
  {
      char *ret;
-@@ -394,6 +405,112 @@ end:
+@@ -394,6 +405,113 @@ end:
      return ret;
  }
  
-+static DWORD WINAPI getaddrinfoW_wSTRUCT( struct getaddrinfoWParams context)
++static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID pParam )
 +{
 +    int ret = EAI_MEMORY, len, i;
 +    char *nodenameA = NULL, *servnameA = NULL;
 +    struct addrinfo *resA;
-+    WCHAR *local_nodenameW = (WCHAR *)context->nodename;
++    getaddrinfoWParams *context = (ThreadParameter *)pParam;
++    WCHAR *local_nodenameW = (WCHAR *)context.nodename;
 +
-+    context->res = NULL;
++    context.res = NULL;
 +    if (context->nodename)
 +    {
 +        /* Is this an IDN? Most likely if any char is above the Ascii table, this
 +         * is the simplest validation possible, further validation will be done by
 +         * the native getaddrinfo() */
-+        for (i = 0; context->nodename[i]; i++)
++        for (i = 0; context.nodename[i]; i++)
 +        {
-+            if (context->nodename[i] > 'z')
++            if (context.nodename[i] > 'z')
 +                break;
 +        }
-+        if (context->nodename[i])
++        if (context.nodename[i])
 +        {
-+            if (context->hints && (context->hints->ai_flags & AI_DISABLE_IDN_ENCODING))
++            if (context.hints && (context.hints->ai_flags & AI_DISABLE_IDN_ENCODING))
 +            {
 +                /* Name requires conversion but it was disabled */
 +                ret = WSAHOST_NOT_FOUND;
@@ -76,15 +77,15 @@ index 492400b17a7..3567951188e 100644
 +                goto end;
 +            }
 +
-+            len = IdnToAscii( 0, context->nodename, -1, NULL, 0 );
++            len = IdnToAscii( 0, context.nodename, -1, NULL, 0 );
 +            if (!len)
 +            {
-+                ERR("Failed to convert %s to punycode\n", debugstr_w(context->nodename));
++                ERR("Failed to convert %s to punycode\n", debugstr_w(context.nodename));
 +                ret = EAI_FAIL;
 +                goto end;
 +            }
 +            if (!(local_nodenameW = malloc( len * sizeof(WCHAR) ))) goto end;
-+            IdnToAscii( 0, context->nodename, -1, local_nodenameW, len );
++            IdnToAscii( 0, context.nodename, -1, local_nodenameW, len );
 +        }
 +    }
 +    if (local_nodenameW)
@@ -93,40 +94,40 @@ index 492400b17a7..3567951188e 100644
 +        if (!(nodenameA = malloc( len ))) goto end;
 +        WideCharToMultiByte( CP_ACP, 0, local_nodenameW, -1, nodenameA, len, NULL, NULL );
 +    }
-+    if (context->servname)
++    if (context.servname)
 +    {
-+        len = WideCharToMultiByte( CP_ACP, 0, context->servname, -1, NULL, 0, NULL, NULL );
-+        if (!(context->servnameA = malloc( len ))) goto end;
-+        WideCharToMultiByte( CP_ACP, 0, context->servname, -1, servnameA, len, NULL, NULL );
++        len = WideCharToMultiByte( CP_ACP, 0, context.servname, -1, NULL, 0, NULL, NULL );
++        if (!(context.servnameA = malloc( len ))) goto end;
++        WideCharToMultiByte( CP_ACP, 0, context.servname, -1, servnameA, len, NULL, NULL );
 +    }
 +
-+    if (context->overlapped)
++    if (context.overlapped)
 +    {
 +        struct getaddrinfo_args *args;
 +
-+        if (context->overlapped->hEvent && context->completion_routine)
++        if (context.overlapped->hEvent && context.completion_routine)
 +        {
 +            ret = WSAEINVAL;
 +            goto end;
 +        }
 +
 +        if (!(args = malloc( sizeof(*args) + sizeof(*args->hints) ))) goto end;
-+        args->overlapped = context->overlapped;
-+        args->completion_routine = context->completion_routine;
-+        args->result = context->res;
++        args->overlapped = context.overlapped;
++        args->completion_routine = context.completion_routine;
++        args->result = context.res;
 +        args->nodename = nodenameA;
 +        args->servname = servnameA;
-+        if (context->hints)
++        if (context.hints)
 +        {
 +            args->hints = (struct addrinfo *)(args + 1);
-+            args->hints->ai_flags    = context->hints->ai_flags;
-+            args->hints->ai_family   = context->hints->ai_family;
-+            args->hints->ai_socktype = context->hints->ai_socktype;
-+            args->hints->ai_protocol = context->hints->ai_protocol;
++            args->hints->ai_flags    = context.hints->ai_flags;
++            args->hints->ai_family   = context.hints->ai_family;
++            args->hints->ai_socktype = context.hints->ai_socktype;
++            args->hints->ai_protocol = context.hints->ai_protocol;
 +        }
 +        else args->hints = NULL;
 +
-+        context->overlapped->Internal = WSAEINPROGRESS;
++        context.overlapped->Internal = WSAEINPROGRESS;
 +        if (!TrySubmitThreadpoolCallback( getaddrinfo_callback, args, NULL ))
 +        {
 +            free( args );
@@ -134,21 +135,21 @@ index 492400b17a7..3567951188e 100644
 +            goto end;
 +        }
 +
-+        if (local_nodenameW != context->nodename)
++        if (local_nodenameW != context.nodename)
 +            free( local_nodenameW );
 +        SetLastError( ERROR_IO_PENDING );
-+        return (LPTHREAD_START_ROUTINE)ERROR_IO_PENDING;
++        return (DWORD)ERROR_IO_PENDING;
 +    }
 +
-+    ret = getaddrinfo( nodenameA, servnameA, context->hints, &resA );
++    ret = getaddrinfo( nodenameA, servnameA, context.hints, &resA );
 +    if (!ret)
 +    {
-+        context->res = addrinfo_list_AtoW( resA );
++        context.res = addrinfo_list_AtoW( resA );
 +        freeaddrinfo( resA );
 +    }
 +
 +end:
-+    if (local_nodenameW != context->nodename)
++    if (local_nodenameW != context.nodename)
 +        free( local_nodenameW );
 +    free( nodenameA );
 +    free( servnameA );
@@ -157,22 +158,22 @@ index 492400b17a7..3567951188e 100644
  
  /***********************************************************************
   *      GetAddrInfoExW   (ws2_32.@)
-@@ -403,7 +520,13 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+@@ -403,7 +521,13 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
                             struct timeval *timeout, OVERLAPPED *overlapped,
                             LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine, HANDLE *handle )
  {
 -    int ret;
 +    LPDWORD ret;
 +    HANDLE getaddrinfoW_thread;
-+    struct getaddrinfoWParams readParams;
 +    LARGE_INTEGER Frequency;
 +    LARGE_INTEGER StartingTime;
 +    LARGE_INTEGER EndingTime;
 +    LARGE_INTEGER ElapsedMicroseconds;
++    getaddrinfoWParams readParams;
  
      TRACE( "name %s, servname %s, namespace %u, namespace_id %s)\n",
             debugstr_w(name), debugstr_w(servname), namespace, debugstr_guid(namespace_id) );
-@@ -412,15 +535,58 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+@@ -412,15 +536,60 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
          FIXME( "Unsupported namespace %u\n", namespace );
      if (namespace_id)
          FIXME( "Unsupported namespace_id %s\n", debugstr_guid(namespace_id) );
@@ -195,14 +196,16 @@ index 492400b17a7..3567951188e 100644
 +        timeout->tv_sec = 3; 
 +    }
 +    /* Args for a thread function have to go in a struct */
-+    readParams.nodename=name;
-+    readParams.servname=servname;
-+    readParams.hints= (struct addrinfo *)hints;
-+    readParams.res=result;
-+    readParams.overlapped=overlapped;
-+    readParams.completion_routine=&completion_routine;
++    getaddrinfoWParams readParams = {
++        .nodename = name,
++        .servname = servname,
++        .hints = (struct addrinfo *)hints,
++        .res = result,
++        .overlapped = overlapped,
++        .completion_routine = completion_routine
++    };
 +
-+    getaddrinfoW_thread = CreateThread(NULL, 0, getaddrinfoW_wSTRUCT, &readParams, 0, NULL);
++    getaddrinfoW_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getaddrinfoW_wSTRUCT, &readParams, 0, NULL);
 +    if ( !getaddrinfoW_thread ) /* Null on creation (no handle) means an error occured */
 +    {
 +        SetLastError( WSAECONNABORTED );
