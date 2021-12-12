@@ -16,7 +16,7 @@ ENV CCACHE_DIR=/ccache
 # et al   
 ####################################
 WORKDIR /builddir
-#RUN --mount=type=cache,target=/ccache/
+RUN --mount=type=cache,target=/ccache/
 
 # # bool BUILD64BIT
 # # # Build 64bit wine or not. Defaults to true.
