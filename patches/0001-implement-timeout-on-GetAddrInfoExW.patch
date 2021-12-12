@@ -1,6 +1,6 @@
-From 292e33bf4458c6b260bad5eff46596c136280f2f Mon Sep 17 00:00:00 2001
+From 26efb85955ee4618a7815071b6a94bc825e42fc2 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 20:45:42 +0000
+Date: Sun, 12 Dec 2021 21:16:17 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 181 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..080c0bb3b44 100644
+index 492400b17a7..ac26e7a521a 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -27,14 +27,14 @@ index 492400b17a7..080c0bb3b44 100644
  WINE_DEFAULT_DEBUG_CHANNEL(winsock);
  WINE_DECLARE_DEBUG_CHANNEL(winediag);
  
-+struct getaddrinfoWParams {
++typedef struct getaddrinfoWParams {
 +    WCHAR *nodename;
 +    WCHAR *servname;
-+    ADDRINFOEXW *hints; 
-+    ADDRINFOEXW **res;
++    struct addrinfoexW *hints; 
++    struct addrinfoexW **res;
 +    OVERLAPPED *overlapped;
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
-+} readParams;
++} getaddrinfoWParams;
 +
 +static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID pParam );
  unixlib_handle_t ws_unix_handle = 0;
@@ -141,7 +141,7 @@ index 492400b17a7..080c0bb3b44 100644
 +        return (DWORD)ERROR_IO_PENDING;
 +    }
 +
-+    ret = getaddrinfo( nodenameA, servnameA, context->hints, &resA );
++    ret = getaddrinfo( nodenameA, servnameA, (const struct addrinfo *)(context->hints), &resA );
 +    if (!ret)
 +    {
 +        context->res = addrinfo_list_AtoW( resA );
@@ -196,13 +196,13 @@ index 492400b17a7..080c0bb3b44 100644
 +        timeout->tv_sec = 3; 
 +    }
 +    /* Args for a thread function have to go in a struct */
-+    readParams = {
-+        name,
-+        servname,
-+        (struct addrinfo *)hints,
-+        result,
-+        overlapped,
-+        completion_routine
++    readParams = (getaddrinfoWParams) {
++        .nodename = name,
++        .servname = servname,
++        .hints = (struct addrinfo *)hints,
++        .res = (struct addrinfoexW **)result,
++        .overlapped = overlapped,
++        .completion_routine = completion_routine
 +    };
 +
 +    getaddrinfoW_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getaddrinfoW_wSTRUCT, &readParams, 0, NULL);
