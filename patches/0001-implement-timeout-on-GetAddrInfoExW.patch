@@ -1,6 +1,6 @@
-From c37d92edaf2a81599acf4087b1e97ecd2c1ea543 Mon Sep 17 00:00:00 2001
+From e1d951c0085f176470451744ae9bb402c4949877 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 14:44:59 +0000
+Date: Sun, 12 Dec 2021 15:04:14 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 180 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..19ebbd33116 100644
+index 492400b17a7..f591792b1c9 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,21 @@
@@ -26,8 +26,8 @@ index 492400b17a7..19ebbd33116 100644
  
  WINE_DEFAULT_DEBUG_CHANNEL(winsock);
  WINE_DECLARE_DEBUG_CHANNEL(winediag);
-+DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID params* ); /* func declaration */
  
++DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID *params )
  unixlib_handle_t ws_unix_handle = 0;
  
  #define WS_CALL(func, params) __wine_unix_call( ws_unix_handle, ws_unix_ ## func, params )
@@ -48,7 +48,7 @@ index 492400b17a7..19ebbd33116 100644
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
 +};
 +
-+static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID params* )
++static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID *params )
 +{
 +    struct getaddrinfoWParams context = params;
 +
@@ -166,7 +166,7 @@ index 492400b17a7..19ebbd33116 100644
 -    int ret;
 +    LPDWORD ret;
 +    HANDLE getaddrinfoW_thread;
-+    getaddrinfoWParams readParams;
++    struct getaddrinfoWParams readParams;
 +    LARGE_INTEGER Frequency;
 +    LARGE_INTEGER StartingTime;
 +    LARGE_INTEGER EndingTime;
@@ -187,7 +187,7 @@ index 492400b17a7..19ebbd33116 100644
 -    if (ret) return ret;
 -    if (handle) *handle = (HANDLE)0xdeadbeef;
 -    return 0;
-+    if (!timout || (!timeout.tv_sec && !timeout.tv_usec))
++    if (!timeout || (!timeout->tv_sec && !timeout->tv_usec))
 +    {
 +        /*
 +            Reasonable defualt timeout time of 3 seconds
@@ -218,7 +218,7 @@ index 492400b17a7..19ebbd33116 100644
 +    ElapsedMicroseconds.QuadPart *= 1000000;
 +    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 +
-+    while ((long)ElapsedMicroseconds.QuadPart < (long)timeout->tv_usec + (long)timout->tv_sec*1000000 )
++    while ((long)ElapsedMicroseconds.QuadPart < (long)timeout->tv_usec + (long)timeout->tv_sec*1000000 )
 +    {
 +        GetExitCodeThread(getaddrinfoW_thread, ret);
 +        if ( ret != STILL_ACTIVE) break;
