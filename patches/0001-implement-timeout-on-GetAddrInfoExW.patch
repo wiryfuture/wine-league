@@ -1,6 +1,6 @@
-From 5222b32f0791353198ffc3fe0ac2648257228010 Mon Sep 17 00:00:00 2001
+From bfa15e682f8f609f7ca082db4bdfb7594ef0d115 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 02:37:09 +0000
+Date: Sun, 12 Dec 2021 04:17:03 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 181 insertions(+), 11 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..331c6e9346b 100644
+index 492400b17a7..934b748e577 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,11 +18,13 @@
@@ -30,7 +30,7 @@ index 492400b17a7..331c6e9346b 100644
      return ret;
  }
  
-+struct getaddrinfoWParams {
++static struct getaddrinfoWParams {
 +    WCHAR *nodename;
 +    WCHAR *servname;
 +    struct addrinfo *hints;
@@ -39,17 +39,17 @@ index 492400b17a7..331c6e9346b 100644
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
 +};
 +
-+DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID params* )
++static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID params* )
 +{
 +    struct getaddrinfoWParams context = params;
 +
 +    int ret = EAI_MEMORY, len, i;
 +    char *nodenameA = NULL, *servnameA = NULL;
 +    struct addrinfo *resA;
-+    WCHAR *local_nodenameW = (WCHAR *)context->nodename;
++    WCHAR *local_nodenameW = (WCHAR *)context.nodename;
 +
 +    context->*res = NULL;
-+    if (context->nodename)
++    if (context.nodename)
 +    {
 +        /* Is this an IDN? Most likely if any char is above the Ascii table, this
 +         * is the simplest validation possible, further validation will be done by
@@ -180,7 +180,7 @@ index 492400b17a7..331c6e9346b 100644
 -    if (ret) return ret;
 -    if (handle) *handle = (HANDLE)0xdeadbeef;
 -    return 0;
-+    if (!timout || (!timeout->tv_sec && !timeout->tv_usec) || timeout->tv_sec == 0 && timeout->tv_usec == 0)
++    if (!timout || (!timeout.tv_sec && !timeout.tv_usec))
 +    {
 +        /*
 +            Reasonable defualt timeout time of 3 seconds
@@ -197,7 +197,7 @@ index 492400b17a7..331c6e9346b 100644
 +    readParams->overlapped=overlapped;
 +    readParams->completion_routine=completion_routine;
 +
-+    getaddrinfoW_thread = CreateThread(NULL, 0, getaddrinfoW_wSTRUCT, readParams, 0, NULL);
++    getaddrinfoW_thread = CreateThread(NULL, 0, &*getaddrinfoW_wSTRUCT, &readParams, 0, NULL);
 +    if ( !getaddrinfoW_thread ) /* Null on creation (no handle) means an error occured */
 +    {
 +        SetLastError( WSAECONNABORTED );
@@ -207,26 +207,26 @@ index 492400b17a7..331c6e9346b 100644
 +    QueryPerformanceFrequency(&Frequency);
 +    QueryPerformanceCounter(&StartingTime);
 +    EndingTime = StartingTime;
-+    ElapsedMicroseconds->QuadPart = EndingTime->QuadPart - StartingTime->QuadPart;
-+    ElapsedMicroseconds->QuadPart *= 1000000;
-+    ElapsedMicroseconds->QuadPart /= Frequency->QuadPart;
++    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
++    ElapsedMicroseconds.QuadPart *= 1000000;
++    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 +
-+    while ((long)ElapsedMicroseconds->QuadPart < (long)timeout->tv_usec + (long)timout->tv_sec*1000000 )
++    while ((long)ElapsedMicroseconds.QuadPart < (long)timeout.tv_usec + (long)timout.tv_sec*1000000 )
 +    {
-+        GetExitCodeThread(getaddrinfoW_thread, ret);
-+        if ( ret != STILL_ACTIVE) break;
++        GetExitCodeThread(getaddrinfoW_thread, &ret);
++        if ( &ret != STILL_ACTIVE) break;
 +        QueryPerformanceCounter(&EndingTime);
-+        ElapsedMicroseconds->QuadPart = EndingTime.QuadPart - StartingTime->QuadPart;
-+        ElapsedMicroseconds->QuadPart *= 1000000;
-+        ElapsedMicroseconds->QuadPart /= Frequency->QuadPart;
++        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
++        ElapsedMicroseconds.QuadPart *= 1000000;
++        ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 +    }
-+    if ( ret == STILL_ACTIVE )
++    if ( &ret == STILL_ACTIVE )
 +    {
 +        /*TerminateThread(getaddrinfoW_thread, NULL) */ /* can't really tell what will get terminated so we kinda just have to let it leak */
 +        SetLastError( WSAETIMEDOUT );
 +        return WSAETIMEDOUT;
 +    }
-+    else if (ret == 0)
++    else if ((int)ret == 0)
 +    {
 +        if (handle) *handle = (HANDLE)0xdeadbeef;
 +        return (int)ret;
