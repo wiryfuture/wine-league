@@ -1,6 +1,6 @@
-From a3c8713bfee9567258939983a97d3f34ece6d7b8 Mon Sep 17 00:00:00 2001
+From 35915e407d07d59579329eae2a5b67ebd03c9d72 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 18:12:50 +0000
+Date: Sun, 12 Dec 2021 18:27:58 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 178 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..ca25dc7660a 100644
+index 492400b17a7..3567951188e 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -36,7 +36,7 @@ index 492400b17a7..ca25dc7660a 100644
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
 +};
 +
-+static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID context);
++static DWORD WINAPI getaddrinfoW_wSTRUCT( struct getaddrinfoWParams context);
  unixlib_handle_t ws_unix_handle = 0;
  
  #define WS_CALL(func, params) __wine_unix_call( ws_unix_handle, ws_unix_ ## func, params )
@@ -48,7 +48,7 @@ index 492400b17a7..ca25dc7660a 100644
      return ret;
  }
  
-+static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID context)
++static DWORD WINAPI getaddrinfoW_wSTRUCT( struct getaddrinfoWParams context)
 +{
 +    int ret = EAI_MEMORY, len, i;
 +    char *nodenameA = NULL, *servnameA = NULL;
