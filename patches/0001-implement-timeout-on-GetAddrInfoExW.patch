@@ -1,6 +1,6 @@
-From 21af53d0348b6cb863b86cba3d229e53935386d9 Mon Sep 17 00:00:00 2001
+From 44f9b969b2f1d2729d917336a68a705a169d91a2 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 19:24:35 +0000
+Date: Sun, 12 Dec 2021 19:43:28 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 181 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..ee006eb07b9 100644
+index 492400b17a7..d66a74e1bbe 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -53,7 +53,7 @@ index 492400b17a7..ee006eb07b9 100644
 +    int ret = EAI_MEMORY, len, i;
 +    char *nodenameA = NULL, *servnameA = NULL;
 +    struct addrinfo *resA;
-+    getaddrinfoWParams *context = (getaddrinfoWParams *)pParam;
++    struct getaddrinfoWParams *context = (struct getaddrinfoWParams *)pParam;
 +    WCHAR *local_nodenameW = (WCHAR *)context.nodename;
 +
 +    context.res = NULL;
