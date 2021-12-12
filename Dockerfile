@@ -70,5 +70,5 @@ CMD cp -r /builddir/build/* /exports/. && chmod -R 777 /exports
 # building this WILL take a while
 # build commands: 
 #   # docker build . -t wiryfuture/wine-league --build-arg WINE_TAG=tags/wine-6.16 --build-arg STAGING_TAG=tags/v6.16
-#   # buildah bud --build-arg WINE_TAG=tags/wine-6.16 --build-arg STAGING_TAG=tags/v6.16 -t wiryfuture/wine-league .
+#   # buildah bud --build-arg WINE_TAG=tags/wine-6.16 --build-arg STAGING_TAG=tags/v6.16 --layers=true -t wiryfuture/wine-league .
 # final command: docker run -v /folder/for/wine:/exports wiryfuture/wine-league
