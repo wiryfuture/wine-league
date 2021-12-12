@@ -1,6 +1,6 @@
-From ab9bfa90344eec95416f3b76e056172ab364f076 Mon Sep 17 00:00:00 2001
+From e325f71a45330464d16be78f829ea235a42183cf Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 20:04:02 +0000
+Date: Sun, 12 Dec 2021 20:18:18 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 181 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..a72abd04359 100644
+index 492400b17a7..a8552a9bedb 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -30,8 +30,8 @@ index 492400b17a7..a72abd04359 100644
 +struct getaddrinfoWParams {
 +    WCHAR *nodename;
 +    WCHAR *servname;
-+    struct addrinfo *hints; 
-+    ADDRINFOEXW **res;
++    ADDRINFOEXW *hints; 
++    ADDRINFOEXW *res;
 +    OVERLAPPED *overlapped;
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
 +} readParams;
@@ -97,7 +97,7 @@ index 492400b17a7..a72abd04359 100644
 +    if (context->servname)
 +    {
 +        len = WideCharToMultiByte( CP_ACP, 0, context->servname, -1, NULL, 0, NULL, NULL );
-+        if (!(context->servnameA = malloc( len ))) goto end;
++        if (!(servnameA = malloc( len ))) goto end;
 +        WideCharToMultiByte( CP_ACP, 0, context->servname, -1, servnameA, len, NULL, NULL );
 +    }
 +
