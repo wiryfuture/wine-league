@@ -1,6 +1,6 @@
-From 9a9e741c185eae55d390b7a59d3bf68dc39441dd Mon Sep 17 00:00:00 2001
+From 3f214a010a90a261198abe713a4cefac3000b555 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 17:37:32 +0000
+Date: Sun, 12 Dec 2021 17:55:25 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 178 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..e6df0d2e46b 100644
+index 492400b17a7..c1c35e902cf 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -28,15 +28,15 @@ index 492400b17a7..e6df0d2e46b 100644
  WINE_DECLARE_DEBUG_CHANNEL(winediag);
  
 +struct getaddrinfoWParams {
-+    const WCHAR &*nodename, 
-+    const WCHAR &*servname,
-+    const struct addrinfo &*hints, 
-+    ADDRINFOEXW &**res, 
-+    OVERLAPPED &*overlapped,
-+    LPLOOKUPSERVICE_COMPLETION_ROUTINE &completion_routine
++    WCHAR *nodename, 
++    WCHAR *servname,
++    struct addrinfo *hints, 
++    ADDRINFOEXW **res, 
++    OVERLAPPED *overlapped,
++    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine
 +};
 +
-+static DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID context );
++DWORD WINAPI getaddrinfoW_wSTRUCT( LPVOID context );
  unixlib_handle_t ws_unix_handle = 0;
  
  #define WS_CALL(func, params) __wine_unix_call( ws_unix_handle, ws_unix_ ## func, params )
@@ -195,11 +195,11 @@ index 492400b17a7..e6df0d2e46b 100644
 +        timeout->tv_sec = 3; 
 +    }
 +    /* Args for a thread function have to go in a struct */
-+    readParams.nodename=&name;
-+    readParams.servname=&servname;
-+    readParams.hints=& (struct addrinfo *)hints;
-+    readParams.res=&result;
-+    readParams.overlapped=&overlapped;
++    readParams.nodename=name;
++    readParams.servname=servname;
++    readParams.hints= (struct addrinfo *)hints;
++    readParams.res=result;
++    readParams.overlapped=overlapped;
 +    readParams.completion_routine=&completion_routine;
 +
 +    getaddrinfoW_thread = CreateThread(NULL, 0, getaddrinfoW_wSTRUCT, &readParams, 0, NULL);
