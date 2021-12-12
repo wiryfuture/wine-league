@@ -1,6 +1,6 @@
-From c112a43a56ab2ec290e7b7bc8b12c0465bd93f66 Mon Sep 17 00:00:00 2001
+From d7124e5df30bb93a9ef0b03b517df134b1bf5e63 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 15:56:57 +0000
+Date: Sun, 12 Dec 2021 16:22:36 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 178 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..6b16b8f5345 100644
+index 492400b17a7..dc7daaaf6d8 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,21 @@
@@ -27,7 +27,7 @@ index 492400b17a7..6b16b8f5345 100644
  WINE_DEFAULT_DEBUG_CHANNEL(winsock);
  WINE_DECLARE_DEBUG_CHANNEL(winediag);
  
-+static LPTHREAD_START_ROUTINE WINAPI getaddrinfoW_wSTRUCT( LPVOID *params );
++static LPTHREAD_START_ROUTINE WINAPI getaddrinfoW_wSTRUCT( struct getaddrinfoWParams *params );
  unixlib_handle_t ws_unix_handle = 0;
  
  #define WS_CALL(func, params) __wine_unix_call( ws_unix_handle, ws_unix_ ## func, params )
@@ -40,22 +40,22 @@ index 492400b17a7..6b16b8f5345 100644
  }
  
 +struct getaddrinfoWParams {
-+    WCHAR *nodename;
-+    WCHAR *servname;
-+    struct addrinfo *hints;
-+    ADDRINFOEXW **res;
-+    OVERLAPPED *overlapped;
++    WCHAR nodename;
++    WCHAR servname;
++    struct addrinfo hints;
++    ADDRINFOEXW res;
++    OVERLAPPED overlapped;
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
 +};
 +
-+static LPTHREAD_START_ROUTINE WINAPI getaddrinfoW_wSTRUCT( LPVOID *context )
++static LPTHREAD_START_ROUTINE WINAPI getaddrinfoW_wSTRUCT( struct getaddrinfoWParams *context )
 +{
 +    int ret = EAI_MEMORY, len, i;
 +    char *nodenameA = NULL, *servnameA = NULL;
 +    struct addrinfo *resA;
 +    WCHAR *local_nodenameW = (WCHAR *)context.nodename;
 +
-+    context->res* = NULL;
++    context->res = NULL;
 +    if (context.nodename)
 +    {
 +        /* Is this an IDN? Most likely if any char is above the Ascii table, this
@@ -137,13 +137,13 @@ index 492400b17a7..6b16b8f5345 100644
 +        if (local_nodenameW != context.nodename)
 +            free( local_nodenameW );
 +        SetLastError( ERROR_IO_PENDING );
-+        return ERROR_IO_PENDING;
++        return (LPTHREAD_START_ROUTINE)ERROR_IO_PENDING;
 +    }
 +
 +    ret = getaddrinfo( nodenameA, servnameA, context.hints, &resA );
 +    if (!ret)
 +    {
-+        context->res* = addrinfo_list_AtoW( resA );
++        context->res = addrinfo_list_AtoW( resA );
 +        freeaddrinfo( resA );
 +    }
 +
@@ -152,7 +152,7 @@ index 492400b17a7..6b16b8f5345 100644
 +        free( local_nodenameW );
 +    free( nodenameA );
 +    free( servnameA );
-+    return ret;
++    return (LPTHREAD_START_ROUTINE)ret;
 +}
  
  /***********************************************************************
@@ -231,12 +231,12 @@ index 492400b17a7..6b16b8f5345 100644
 +        SetLastError( WSAETIMEDOUT );
 +        return WSAETIMEDOUT;
 +    }
-+    else if (ret == 0)
++    else if ((int)&ret == 0)
 +    {
 +        if (handle) *handle = (HANDLE)0xdeadbeef;
-+        return (int)ret;
++        return (int)&ret;
 +    }
-+    else return (int)ret;
++    else return (int)&ret;
  }
  
  
