@@ -1,6 +1,6 @@
-From 0d7a76c0d7de42ec99761a4d89413a2ff4c3f21b Mon Sep 17 00:00:00 2001
+From 292e33bf4458c6b260bad5eff46596c136280f2f Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 12 Dec 2021 20:26:41 +0000
+Date: Sun, 12 Dec 2021 20:45:42 +0000
 Subject: [PATCH] implement timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] implement timeout on GetAddrInfoExW
  1 file changed, 181 insertions(+), 12 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..9afc2aaa7cf 100644
+index 492400b17a7..080c0bb3b44 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -28,9 +28,9 @@ index 492400b17a7..9afc2aaa7cf 100644
  WINE_DECLARE_DEBUG_CHANNEL(winediag);
  
 +struct getaddrinfoWParams {
-+    const WCHAR *nodename;
-+    const WCHAR *servname;
-+    const struct ADDRINFOEXW *hints; 
++    WCHAR *nodename;
++    WCHAR *servname;
++    ADDRINFOEXW *hints; 
 +    ADDRINFOEXW **res;
 +    OVERLAPPED *overlapped;
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
