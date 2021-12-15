@@ -16,8 +16,8 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/esync-unix-mainline.p
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/03-proton-fsync_staging.patch
 
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/40-proton-futex2.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC.patch
-#cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lfh-non-proton-pre-needed.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lfh-non-proton-pre-needed.patch
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/50-proton_LFH.patch
 #cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-winelib.patch
 ##cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-iphlpapi-212361.patch
