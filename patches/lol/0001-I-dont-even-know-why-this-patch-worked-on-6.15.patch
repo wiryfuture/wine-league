@@ -1,0 +1,37 @@
+From 40e4004fe4b9fd8785227497d529faef466035e1 Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Wed, 15 Dec 2021 20:43:54 +0000
+Subject: [PATCH] I dont even know why this patch worked on 6.15
+
+---
+ tools/winebuild/import.c | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
+
+diff --git a/tools/winebuild/import.c b/tools/winebuild/import.c
+index c876d51f8e6..2839fb6e92d 100644
+--- a/tools/winebuild/import.c
++++ b/tools/winebuild/import.c
+@@ -780,16 +780,10 @@ static void output_import_thunk( const char *name, const char *table, int pos )
+     switch (target.cpu)
+     {
+     case CPU_i386:
+-        if (!UsePIC)
+-        {
+-            output( "\tjmp *(%s+%d)\n", table, pos );
+-        }
+-        else
+-        {
+-            output( "\tcall %s\n", asm_name("__wine_spec_get_pc_thunk_eax") );
+-            output( "1:\tjmp *%s+%d-1b(%%eax)\n", table, pos );
+-            needs_get_pc_thunk = 1;
+-        }
++        output( "\t.byte 0xb8\n" );                               /* mov eax, SYSCALL */
++        output( "\t.long %d\n", i );
++        output( "\t.byte 0x64,0xff,0x15,0xc0,0x00,0x00,0x00\n" ); /* call dword ptr fs:[0C0h] */
++        output( "\tret $%u\n", odp->type == TYPE_STDCALL ? get_args_size( odp ) : 0 );
+         break;
+     case CPU_x86_64:
+         output( "\tjmpq *%s+%d(%%rip)\n", table, pos );
+-- 
+2.33.1
+
