@@ -22,7 +22,7 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lfh-non-proton-pre-neede
 #cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-winelib.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-iphlpapi-212361.patch
 ##cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-ntdll-socket-212770.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-bf4_ping.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/wine/icmp.patch
 
 # Frogging patch
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/childwindow.patch
