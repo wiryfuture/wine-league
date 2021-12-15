@@ -29,7 +29,7 @@ cd /builddir/wine && patch -Np1 < /builddir/wine/proton/childwindow.patch
 
 # Apply GE's league patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
-#cd /builddir/wine && patch -Np1 < /builddir/patches/lol/alternative_patch_by_using_a_fake_cs_segment.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/alternative_patch_by_using_a_fake_cs_segment.patch
 #cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-6.15-fix.patch
 
 /builddir/wine/dlls/winevulkan/make_vulkan
