@@ -13,7 +13,7 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_m
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/04-proton-LAA_staging.patch
 # fsync esync patches
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/esync-unix-mainline.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/03-proton-fsync_staging.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/proton/03-proton-fsync_staging.patch
 
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/40-proton-futex2.patch
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC.patch
