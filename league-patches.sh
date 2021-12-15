@@ -25,7 +25,7 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-iphlpapi-212361.
 #cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-bf4_ping.patch
 
 # Frogging patch
-cd /builddir/wine && patch -Np1 < /builddir/wine/wine/childwindow.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/wine/childwindow.patch
 
 # Apply GE's league patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
