@@ -9,7 +9,7 @@
 ####################################
 # Apply GloriousEggroll's wine and proton patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/proton/
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/imm32-com-initialization_no_net_active_window.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/wine/imm32-com-initialization_no_net_active_window.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_monotonic.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/04-proton-LAA_staging.patch
 # fsync esync patches
