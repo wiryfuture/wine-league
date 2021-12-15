@@ -24,7 +24,7 @@ diff --git a/dlls/iphlpapi/icmp.c b/dlls/iphlpapi/icmp.c
 index 8ef03219e52..6305b3ca9ad 100644
 --- a/dlls/iphlpapi/icmp.c
 +++ b/dlls/iphlpapi/icmp.c
-@@ -62,6 +62,9 @@
+@@ -64,6 +64,9 @@
  #ifdef HAVE_SYS_POLL_H
  # include <sys/poll.h>
  #endif
