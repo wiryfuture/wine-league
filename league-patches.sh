@@ -12,7 +12,7 @@
 
 # issue with one of these
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_monotonic.patch
-#cd /builddir/wine && patch -Np1 < /builddir/patches/proton/04-proton-LAA_staging.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/LAA-unix-staging.patch
 
 # fsync esync patches
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/esync-unix-mainline.patch
@@ -44,5 +44,5 @@ cd /builddir/wine && autoreconf -f
 #cd /builddir/wine && patch -Np1 < /builddir/patches/0001-attempt-isb-bodge.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
 ##cd /builddir/wine && patch -Np1 < /builddir/patches/0001-implement-timeout-on-GetAddrInfoExW.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/0001-remove-ret-values-from-getaddrinfoexw-so-handle-happ.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/0001-remove-ret-values-from-getaddrinfoexw-so-handle-happ.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/0001-possible-query-wire-only-hotfix.patch
