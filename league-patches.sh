@@ -9,8 +9,11 @@
 ####################################
 # Apply GloriousEggroll's wine and proton patches
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/
+
+# issue with one of these
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_monotonic.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/04-proton-LAA_staging.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/proton/04-proton-LAA_staging.patch
+
 # fsync esync patches
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/esync-unix-mainline.patch
 #cd /builddir/wine && patch -Np1 < /builddir/patches/proton/03-proton-fsync_staging.patch
