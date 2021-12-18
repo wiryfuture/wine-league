@@ -74,3 +74,6 @@ CMD cp -r /builddir/build/* /exports/. && chmod -R 777 /exports
 # final command: 
 #   # docker run -v /folder/for/wine:/exports wiryfuture/wine-league
 #   # podman run -v /folder/for/wine:/exports localhost/wiryfuture/wine-league
+
+# Effective debugging command
+# WINEPREFIX=~/Games/league-of-legends WINEARCH=win32 WINEDEBUG=warn+all,+server ./wine "/home/philip/Games/league-of-legends/drive_c/Riot Games/Riot Client/RiotClientServices.exe"  --launch-patchline=live --launch-product=league_of_legends

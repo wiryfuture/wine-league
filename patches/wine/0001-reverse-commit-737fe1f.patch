@@ -1,14 +1,14 @@
-From 4115d01e6f94eedfd0176632acf137b0e494ec2c Mon Sep 17 00:00:00 2001
+From 959b1ac2d0b54651b8c0c32681756a21eac10b5d Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sat, 18 Dec 2021 13:34:09 +0000
+Date: Sat, 18 Dec 2021 14:01:09 +0000
 Subject: [PATCH] reverse commit 737fe1f
 
 ---
- server/fd.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ server/fd.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/server/fd.c b/server/fd.c
-index c9a21186722..f4b2ac44eb8 100644
+index c9a21186722..4ec5b3839fb 100644
 --- a/server/fd.c
 +++ b/server/fd.c
 @@ -566,6 +566,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
@@ -35,14 +35,15 @@ index c9a21186722..f4b2ac44eb8 100644
          ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user );
      }
      else
-@@ -1651,6 +1654,7 @@ void set_fd_events( struct fd *fd, int events )
+@@ -1651,7 +1654,7 @@ void set_fd_events( struct fd *fd, int events )
          pollfd[user].events = POLLERR;
          pollfd[user].revents = 0;
      }
+-    else
 +    else if (pollfd[user].fd != -1 || !pollfd[user].events)
-     else
      {
          pollfd[user].fd = fd->unix_fd;
+         pollfd[user].events = events;
 -- 
 2.33.1
 
