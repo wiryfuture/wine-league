@@ -69,8 +69,8 @@ CMD cp -r /builddir/build/* /exports/. && chmod -R 777 /exports
 # If you switch to experimental mode like in this answer, you actually get a working ccache https://stackoverflow.com/a/56833198
 # building this WILL take a while
 # build commands: 
-#   # docker build . -t wiryfuture/wine-league --build-arg WINE_TAG=tags/wine-6.16 --build-arg STAGING_TAG=tags/v6.16
-#   # buildah bud --build-arg WINE_TAG=tags/wine-6.16 --build-arg STAGING_TAG=tags/v6.16 --layers=true -t wiryfuture/wine-league .
+#   # docker build . -t wiryfuture/wine-league --build-arg WINE_TAG=tags/wine-7.0-rc2 --build-arg STAGING_TAG=tags/v7.0-rc2
+#   # buildah bud --build-arg WINE_TAG=tags/wine-7.0-rc2 --build-arg STAGING_TAG=tags/v7.0-rc2 --layers=true -t wiryfuture/wine-league .
 # final command: 
 #   # docker run -v /folder/for/wine:/exports wiryfuture/wine-league
 #   # podman run -v /folder/for/wine:/exports localhost/wiryfuture/wine-league
