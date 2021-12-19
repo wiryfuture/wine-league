@@ -1,14 +1,14 @@
-From 0d2fc7fe27e757cb26a6d71210a891aa0faca677 Mon Sep 17 00:00:00 2001
+From d9803f65383bb0bd27989f4ea1888fc570c1b05d Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 19 Dec 2021 20:46:11 +0000
+Date: Sun, 19 Dec 2021 21:16:33 +0000
 Subject: [PATCH] commit 737fe1f is dead to me
 
 ---
- server/fd.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ server/fd.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/server/fd.c b/server/fd.c
-index c9a21186722..cc17fde5dde 100644
+index c9a21186722..675fab9058d 100644
 --- a/server/fd.c
 +++ b/server/fd.c
 @@ -567,6 +567,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
@@ -19,23 +19,33 @@ index c9a21186722..cc17fde5dde 100644
      }
      else
      {
-@@ -666,6 +667,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+@@ -664,6 +665,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+     }
+     else if (pollfd[user].fd == -1)
      {
++        /*if (pollfd[user].events) return;*/  /* stopped waiting on it, don't restart */
          ev[0].flags |= EV_ADD | ((events & POLLIN) ? EV_ENABLE : EV_DISABLE);
          ev[1].flags |= EV_ADD | ((events & POLLOUT) ? EV_ENABLE : EV_DISABLE);
-+        if (pollfd[user].events) return;  /* stopped waiting on it, don't restart */
      }
-     else
-     {
-@@ -772,7 +774,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+@@ -772,7 +774,8 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
      }
      else if (pollfd[user].fd == -1)
      {
 -        ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user );
++        if (pollfd[user].events) return;  /* stopped waiting on it, don't restart */
 +        ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user ); 
      }
      else
      {
+@@ -1651,7 +1654,7 @@ void set_fd_events( struct fd *fd, int events )
+         pollfd[user].events = POLLERR;
+         pollfd[user].revents = 0;
+     }
+-    else
++    else if (pollfd[user].fd != -1 || !pollfd[user].events)
+     {
+         pollfd[user].fd = fd->unix_fd;
+         pollfd[user].events = events;
 -- 
 2.33.1
 
