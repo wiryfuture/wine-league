@@ -1,0 +1,58 @@
+From e63d8e8105bbfb892370647bc68ffc3e48baf795 Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Sun, 19 Dec 2021 19:00:58 +0000
+Subject: [PATCH] commit 737fe1f is dead to me
+
+---
+ server/fd.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/server/fd.c b/server/fd.c
+index c9a21186722..6dc7ffdbd71 100644
+--- a/server/fd.c
++++ b/server/fd.c
+@@ -567,6 +567,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+     else if (pollfd[user].fd == -1)
+     {
+         ctl = EPOLL_CTL_ADD;
++        if (pollfd[user].events) return;  /* stopped waiting on it, don't restart */
+     }
+     else
+     {
+@@ -666,6 +667,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+     {
+         ev[0].flags |= EV_ADD | ((events & POLLIN) ? EV_ENABLE : EV_DISABLE);
+         ev[1].flags |= EV_ADD | ((events & POLLOUT) ? EV_ENABLE : EV_DISABLE);
++        if (pollfd[user].events) return;  /* stopped waiting on it, don't restart */
+     }
+     else
+     {
+@@ -772,7 +774,8 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+     }
+     else if (pollfd[user].fd == -1)
+     {
+-        ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user );
++        ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user ); 
++        if (pollfd[user].events) return;  /* stopped waiting on it, don't restart */
+     }
+     else
+     {
+@@ -1645,13 +1648,13 @@ void set_fd_events( struct fd *fd, int events )
+ 
+     set_fd_epoll_events( fd, user, events );
+ 
+-    if (events == -1)  /* stop waiting on this fd completely */
++    if (events == -1 || pollfd[user].fd == -1)  /* stop waiting on this fd completely */
+     {
+         pollfd[user].fd = -1;
+         pollfd[user].events = POLLERR;
+         pollfd[user].revents = 0;
+     }
+-    else
++    else if (!pollfd[user].events)
+     {
+         pollfd[user].fd = fd->unix_fd;
+         pollfd[user].events = events;
+-- 
+2.33.1
+

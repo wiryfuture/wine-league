@@ -31,7 +31,7 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-iphlpapi-212361.
 #cd /builddir/wine && patch -Np1 < /builddir/patches/wine/childwindow.patch
 
 # Reverse some scuffed patch to master
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/0001-Modify-commit-737fe1f.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/wine/0001-commit-737fe1f-is-dead-to-me.patch
 
 # Apply GE's league patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
