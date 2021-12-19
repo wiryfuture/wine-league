@@ -48,4 +48,4 @@ cd /builddir/wine && autoreconf -f
 #cd /builddir/wine && patch -Np1 < /builddir/patches/0001-possible-query-wire-only-hotfix.patch
 
 # Reverse some scuffed patch to master
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/0001-commit-737fe1f-is-dead-to-me.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/wine/0001-commit-737fe1f-is-dead-to-me.patch
