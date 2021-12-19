@@ -1,45 +1,73 @@
-From 75167d7e39566706733933b484474b77a6e7e7ce Mon Sep 17 00:00:00 2001
+From bdcbc7ebf1b555b32da520fe7ecbfdf16f62eed1 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 19 Dec 2021 21:49:47 +0000
+Date: Sun, 19 Dec 2021 22:37:44 +0000
 Subject: [PATCH] commit 737fe1f is dead to me
 
 ---
- server/fd.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ server/fd.c | 32 ++++++++++++++++++++++++++------
+ 1 file changed, 26 insertions(+), 6 deletions(-)
 
 diff --git a/server/fd.c b/server/fd.c
-index c9a21186722..8c3247f5a3f 100644
+index c9a21186722..2ab6951d4f1 100644
 --- a/server/fd.c
 +++ b/server/fd.c
-@@ -566,7 +566,8 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+@@ -566,7 +566,14 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
      }
      else if (pollfd[user].fd == -1)
      {
 -        ctl = EPOLL_CTL_ADD;
-+        /*if (pollfd[user].events) return; */ /* stopped waiting on it, don't restart */
-+        ctl = EPOLL_CTL_ADD;   
++        if (pollfd[user].events) 
++        { /* stopped waiting on it, don't restart */
++            ctl = EPOLL_CTL_DEL;
++        }
++        else 
++        {
++            ctl = EPOLL_CTL_ADD; 
++        }
      }
      else
      {
-@@ -664,6 +665,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+@@ -664,8 +671,14 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
      }
      else if (pollfd[user].fd == -1)
      {
-+        if (pollfd[user].events) return;  /* stopped waiting on it, don't restart */
-         ev[0].flags |= EV_ADD | ((events & POLLIN) ? EV_ENABLE : EV_DISABLE);
-         ev[1].flags |= EV_ADD | ((events & POLLOUT) ? EV_ENABLE : EV_DISABLE);
+-        ev[0].flags |= EV_ADD | ((events & POLLIN) ? EV_ENABLE : EV_DISABLE);
+-        ev[1].flags |= EV_ADD | ((events & POLLOUT) ? EV_ENABLE : EV_DISABLE);
++        if (pollfd[user].events) { /* stopped waiting on it, don't restart */
++            ev[0].flags |= EV_DELETE;
++            ev[1].flags |= EV_DELETE;   
++        }  
++        else {
++            ev[0].flags |= EV_ADD | ((events & POLLIN) ? EV_ENABLE : EV_DISABLE);
++            ev[1].flags |= EV_ADD | ((events & POLLOUT) ? EV_ENABLE : EV_DISABLE);
++        }   
      }
-@@ -772,7 +774,8 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+     else
+     {
+@@ -772,7 +785,14 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
      }
      else if (pollfd[user].fd == -1)
      {
 -        ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user );
-+        if (pollfd[user].events) return;  /* stopped waiting on it, don't restart */
-+        ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user ); 
++        if (pollfd[user].events) 
++        {   /* stopped waiting on it, don't restart */
++            port_dissociate( port_fd, PORT_SOURCE_FD, fd->unix_fd );
++        }  
++        else
++        {
++                    ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user ); 
++        }
      }
      else
      {
-@@ -1651,7 +1654,7 @@ void set_fd_events( struct fd *fd, int events )
+@@ -1645,13 +1665,13 @@ void set_fd_events( struct fd *fd, int events )
+ 
+     set_fd_epoll_events( fd, user, events );
+ 
+-    if (events == -1)  /* stop waiting on this fd completely */
++    if (pollfd[user].fd == -1 ||events == -1)  /* stop waiting on this fd completely */
+     {
+         pollfd[user].fd = -1;
          pollfd[user].events = POLLERR;
          pollfd[user].revents = 0;
      }
