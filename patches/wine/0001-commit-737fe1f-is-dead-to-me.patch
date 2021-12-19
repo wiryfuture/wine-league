@@ -1,14 +1,14 @@
-From 4736032f496ddcff11afa348a3939e66c9d6bc80 Mon Sep 17 00:00:00 2001
+From 0d2fc7fe27e757cb26a6d71210a891aa0faca677 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Sun, 19 Dec 2021 20:12:20 +0000
+Date: Sun, 19 Dec 2021 20:46:11 +0000
 Subject: [PATCH] commit 737fe1f is dead to me
 
 ---
- server/fd.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ server/fd.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/server/fd.c b/server/fd.c
-index c9a21186722..261e9628457 100644
+index c9a21186722..cc17fde5dde 100644
 --- a/server/fd.c
 +++ b/server/fd.c
 @@ -567,6 +567,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
@@ -27,13 +27,12 @@ index c9a21186722..261e9628457 100644
      }
      else
      {
-@@ -772,7 +774,8 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+@@ -772,7 +774,7 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
      }
      else if (pollfd[user].fd == -1)
      {
 -        ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user );
 +        ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user ); 
-+        if (pollfd[user].events) return;  /* stopped waiting on it, don't restart */
      }
      else
      {
