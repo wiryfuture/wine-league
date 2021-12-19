@@ -30,9 +30,6 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-iphlpapi-212361.
 # Frogging patch
 #cd /builddir/wine && patch -Np1 < /builddir/patches/wine/childwindow.patch
 
-# Reverse some scuffed patch to master
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/0001-commit-737fe1f-is-dead-to-me.patch
-
 # Apply GE's league patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/alternative_patch_by_using_a_fake_cs_segment.patch
@@ -44,8 +41,11 @@ cd /builddir/wine && autoreconf -f
 
 # Apply my patches (testing)
 # cd /builddir/wine && patch -Np1 < /builddir/patches/
-cd /builddir/wine && patch -Np1 < /builddir/patches/0001-attempt-isb-bodge.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/0001-attempt-isb-bodge.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/0003-this-is-wrong-but-what-if-we-just-ignore-this-lol.patch
 ##cd /builddir/wine && patch -Np1 < /builddir/patches/0001-implement-timeout-on-GetAddrInfoExW.patch
 #cd /builddir/wine && patch -Np1 < /builddir/patches/0001-remove-ret-values-from-getaddrinfoexw-so-handle-happ.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/0001-possible-query-wire-only-hotfix.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/0001-possible-query-wire-only-hotfix.patch
+
+# Reverse some scuffed patch to master
+cd /builddir/wine && patch -Np1 < /builddir/patches/wine/0001-commit-737fe1f-is-dead-to-me.patch
