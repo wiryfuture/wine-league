@@ -15,7 +15,7 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_m
 # large address aware patch | more memory can be used
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/LAA-unix-staging.patch
 # esync patch | lets you use esync
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/esync-unix-mainline.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/03-proton-fsync_staging.patch
 # proton patches that improve performance
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/40-proton-futex2.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC.patch
