@@ -19,7 +19,7 @@ Tested to work with Docker and Buildah/Podman.
 3. To run League of Legends using this wine build; 
     - Select **out32/wine** as the wine runner in lutris for league of legends.
     <br>**--or--**
-    - Run RiotClientServices directly using wine. This massive command should do it if you replace **LEAGUEPREFIX** with your actual league prefix.<br> ```WINEPREFIX=LEAGUEPREFIX WINEARCH=win32 WINEDEBUG=warn+all STAGING_SHARED_MEMORY=1 WINE_LARGE_ADDRESS_AWARE=1 __GL_SHADER_DISK_CACHE=1 __GL_SHADER_DISK_CACHE_PATH=LEAGUEPREFIX DXVK_STATE_CACHE_PATH=LEAGUEPREFIX DXVK_LOG_LEVEL=none ./wine "LEAGUEPREFIX/drive_c/Riot Games/Riot Client/RiotClientServices.exe"  --launch-patchline=live --launch-product=league_of_legends```
+    - Run RiotClientServices directly using wine. This massive command should do it if you replace **LEAGUEPREFIX** with your actual league prefix.<br> ```WINEPREFIX=LEAGUEPREFIX WINEARCH=win32 WINEDEBUG=warn+all STAGING_SHARED_MEMORY=1 WINE_LARGE_ADDRESS_AWARE=1 ./wine "LEAGUEPREFIX/drive_c/Riot Games/Riot Client/RiotClientServices.exe"  --launch-patchline=live --launch-product=league_of_legends```
 
 ## Dev tips
 - Buildah provides much larger logs of what went wrong with builds than docker does.
