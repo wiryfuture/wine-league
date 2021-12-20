@@ -14,9 +14,8 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_m
 # large address aware patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/LAA-unix-staging.patch
 # something to do with memory management idk
-cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lfh-non-proton-pre-needed.patch
-# I have no idea what this does
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-iphlpapi-212361.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/lfh-non-proton-pre-needed.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/50-proton_LFH.patch
 
 # League specific patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
