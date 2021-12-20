@@ -28,7 +28,7 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-bf4_ping.patch
 
 # Apply GE's league patche
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/alternative_patch_by_using_a_fake_cs_segment.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-6.15-fix.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-6.15-fix.patch # this is an anticheat patch. Must be present in some form.
 
 /builddir/wine/dlls/winevulkan/make_vulkan
 /builddir/wine/tools/make_requests
