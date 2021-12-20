@@ -1,0 +1,68 @@
+From 830fae3e09a75504b1d73bc8127bc9724fb89cc9 Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Mon, 20 Dec 2021 11:46:27 +0000
+Subject: [PATCH] pollfd[user].revents = 0;
+
+---
+ server/fd.c | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/server/fd.c b/server/fd.c
+index c9a21186722..faadaff1620 100644
+--- a/server/fd.c
++++ b/server/fd.c
+@@ -561,11 +561,15 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+ 
+     if (events == -1)  /* stop waiting on this fd completely */
+     {
+-        if (pollfd[user].fd == -1) return;  /* already removed */
++        if (pollfd[user].fd == -1) {
++             pollfd[user].revents = 0;
++             return;  /* already removed */
++        }
+         ctl = EPOLL_CTL_DEL;
+     }
+     else if (pollfd[user].fd == -1)
+     {
++        pollfd[user].revents = 0;
+         ctl = EPOLL_CTL_ADD;
+     }
+     else
+@@ -658,12 +662,16 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+ 
+     if (events == -1)  /* stop waiting on this fd completely */
+     {
+-        if (pollfd[user].fd == -1) return;  /* already removed */
++        if (pollfd[user].fd == -1) {
++            pollfd[user].revents = 0;
++            return;  /* already removed */
++        }
+         ev[0].flags |= EV_DELETE;
+         ev[1].flags |= EV_DELETE;
+     }
+     else if (pollfd[user].fd == -1)
+     {
++        pollfd[user].revents = 0;
+         ev[0].flags |= EV_ADD | ((events & POLLIN) ? EV_ENABLE : EV_DISABLE);
+         ev[1].flags |= EV_ADD | ((events & POLLOUT) ? EV_ENABLE : EV_DISABLE);
+     }
+@@ -767,11 +775,15 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+ 
+     if (events == -1)  /* stop waiting on this fd completely */
+     {
+-        if (pollfd[user].fd == -1) return;  /* already removed */
++        if (pollfd[user].fd == -1) {
++            pollfd[user].revents = 0;
++            return;  /* already removed */
++        }
+         port_dissociate( port_fd, PORT_SOURCE_FD, fd->unix_fd );
+     }
+     else if (pollfd[user].fd == -1)
+     {
++        pollfd[user].revents = 0;
+         ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user );
+     }
+     else
+-- 
+2.33.1
+

@@ -28,3 +28,4 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/lol/0001-bodge-old-patch.pat
 cd /builddir/wine && autoreconf -f
 
 # Apply my patches:
+cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-pollfd-user-.revents-0.patch
