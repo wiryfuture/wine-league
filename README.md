@@ -7,7 +7,7 @@ Tested to work with Docker and Buildah/Podman.
     - **Docker command:** ```docker build . -t wiryfuture/wine-league --build-arg WINE_TAG=tags/wine-6.16 --build-arg STAGING_TAG=tags/v6.16```
     <br>**--or--**
     - **Buildah command:** 
-    ``buildah bud --build-arg WINE_TAG=tags/wine-6.16 --build-arg STAGING_TAG=tags/v6.16 --layers=true -t wiryfuture/wine-league .```
+    ```buildah bud --build-arg WINE_TAG=tags/wine-6.16 --build-arg STAGING_TAG=tags/v6.16 --layers=true -t wiryfuture/wine-league .```
 <br><br>
 2. Run container images with a directory mount to export the wine build. You need all three directories: wine, out32, out64. You will need to change **/folder/for/wine** to an actual folder on your computer.
     - **Docker command:** 
