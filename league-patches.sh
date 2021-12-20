@@ -13,7 +13,7 @@
 # monotonic clock patch | performance
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_monotonic.patch
 # large address aware patch | more memory can be used
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/LAA-unix-staging.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/04-proton-LAA_staging.patch
 # esync patch | lets you use esync
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/03-proton-fsync_staging.patch
 # proton patches that improve performance
