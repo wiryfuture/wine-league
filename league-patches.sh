@@ -21,7 +21,7 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-iphlpapi-212361.
 # League specific patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/alternative_patch_by_using_a_fake_cs_segment.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/lol/0001-bodge-old-patch.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/0001-bodge-6.15-wine-patch.patch
 # build vulkan cache and some wine tools or something
 /builddir/wine/dlls/winevulkan/make_vulkan
 /builddir/wine/tools/make_requests
