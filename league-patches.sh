@@ -13,7 +13,7 @@
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_monotonic.patch
 # large address aware patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/LAA-unix-staging.patch
-# something to do with memory management idk
+# something to do with syscalls
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/lfh-non-proton-pre-needed.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/0002-proton_LFH.mypatch
 
