@@ -1,6 +1,6 @@
-From 92e1fb2b9880d304e63c2cc886c70ff7ff03971f Mon Sep 17 00:00:00 2001
+From f8ecc250ab5ece69efb828a21714d10a018f8648 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Tue, 21 Dec 2021 19:07:20 +0000
+Date: Tue, 21 Dec 2021 20:21:35 +0000
 Subject: [PATCH] reselect-patch
 
 ---
@@ -9,14 +9,14 @@ Subject: [PATCH] reselect-patch
  2 files changed, 27 insertions(+), 4 deletions(-)
 
 diff --git a/dlls/ws2_32/socket.c b/dlls/ws2_32/socket.c
-index bf87e7824e5..0eadb163cfe 100644
+index bf87e7824e5..885303377bb 100644
 --- a/dlls/ws2_32/socket.c
 +++ b/dlls/ws2_32/socket.c
 @@ -2524,6 +2524,12 @@ int WINAPI WSAPoll( WSAPOLLFD *fds, ULONG count, int timeout )
          SetLastError(WSAEFAULT);
          return SOCKET_ERROR;
      }
-+    if (fds->fd < 1 || fds->events = 0)
++    if (fds->fd < 1 || fds->events == 0)
 +    {
 +        SetLastError(WSAEINVAL);
 +        fds->revents = 0;
