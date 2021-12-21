@@ -20,7 +20,9 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/0002-proton_LFH.mypat
 # League specific patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/alternative_patch_by_using_a_fake_cs_segment.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/lol/0001-bodge-6.15-wine-patch.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-6.19-fix.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lol-update-fix.patch
+
 # build vulkan cache and some wine tools or something
 /builddir/wine/dlls/winevulkan/make_vulkan
 /builddir/wine/tools/make_requests

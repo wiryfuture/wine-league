@@ -1,33 +1,11 @@
-From 6b4b6a35ccf7c398e2f547977a00434b80bf598e Mon Sep 17 00:00:00 2001
-From: Philip Wilk <wiryfuture@gmail.com>
-Date: Mon, 20 Dec 2021 12:26:50 +0000
-Subject: [PATCH] bodge 6.15 wine patch
-
----
- tools/winebuild/import.c | 42 +++++-----------------------------------
- 1 file changed, 5 insertions(+), 37 deletions(-)
-
 diff --git a/tools/winebuild/import.c b/tools/winebuild/import.c
-index c876d51f8e6..b9bee2e3992 100644
+index 5f62210f486..89fc5267a23 100644
 --- a/tools/winebuild/import.c
 +++ b/tools/winebuild/import.c
-@@ -1247,43 +1247,11 @@ void output_stubs( DLLSPEC *spec )
-         switch (target.cpu)
-         {
-         case CPU_i386:
--            /* flesh out the stub a bit to make safedisc happy */
--            output(" \tnop\n" );
--            output(" \tnop\n" );
--            output(" \tnop\n" );
--            output(" \tnop\n" );
--            output(" \tnop\n" );
--            output(" \tnop\n" );
--            output(" \tnop\n" );
--            output(" \tnop\n" );
--            output(" \tnop\n" );
--
--            output( "\tsubl $12,%%esp\n" );
--            output_cfi( ".cfi_adjust_cfa_offset 12" );
+@@ -1304,29 +1304,9 @@ void output_stubs( DLLSPEC *spec )
+
+             output( "\tsubl $12,%%esp\n" );
+             output_cfi( ".cfi_adjust_cfa_offset 12" );
 -            if (UsePIC)
 -            {
 -                output( "\tcall %s\n", asm_name("__wine_spec_get_pc_thunk_eax") );
@@ -51,15 +29,9 @@ index c876d51f8e6..b9bee2e3992 100644
 -                    output( "\tmovl $%d,4(%%esp)\n", odp->ordinal );
 -                output( "\tmovl $.L__wine_spec_file_name,(%%esp)\n" );
 -            }
--            output( "\tcall %s\n", asm_name("__wine_spec_unimplemented_stub") );
-+            /* League stuff idk */
 +            output( "\t.byte 0xb8\n" );                               /* mov eax, SYSCALL */
 +            output( "\t.long %d\n", i );
 +            output( "\t.byte 0x64,0xff,0x15,0xc0,0x00,0x00,0x00\n" ); /* call dword ptr fs:[0C0h] */
-+            output( "\tret $%u\n", odp->type == TYPE_STDCALL ? get_args_size( odp ) : 0 );
+             output( "\tcall %s\n", asm_name("__wine_spec_unimplemented_stub") );
              break;
          case CPU_x86_64:
-             output( "\tsubq $0x28,%%rsp\n" );
--- 
-2.33.1
-
