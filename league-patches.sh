@@ -18,8 +18,6 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/lfh-non-proton-pre-ne
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/0002-proton_LFH.mypatch
 # wayland patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/wine/wine_wayland_driver.patch
-# bcrypt patch idk if this has an impact on perf
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/0001-bcrypt-Add-support-for-calculating-secret-ecc-keys.patch
 
 # League specific patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
