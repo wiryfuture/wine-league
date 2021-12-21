@@ -37,3 +37,5 @@ cd /builddir/wine && autoreconf -f
 # Add your patches here:
 # Sample:
 #   # cd /builddir/wine && patch -Np1 < /builddir/patches/PATCHFOLDER/YOURPATCHHERE.patch
+
+cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-pollfd-user-.revents-0.patch
