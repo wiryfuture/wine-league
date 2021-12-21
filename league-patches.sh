@@ -16,6 +16,9 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/LAA-unix-staging.patc
 # something to do with syscalls
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/lfh-non-proton-pre-needed.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/0002-proton_LFH.mypatch
+# wayland patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/wine/wine_wayland_driver.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/wine/0001-bcrypt-Add-support-for-calculating-secret-ecc-keys.patch
 
 # League specific patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
