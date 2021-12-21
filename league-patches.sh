@@ -15,7 +15,7 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/01-proton-use_clock_m
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/LAA-unix-staging.patch
 # something to do with memory management idk
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/lfh-non-proton-pre-needed.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/50-proton_LFH.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/0001-LFT-7.0.patch
 
 # League specific patches
 # cd /builddir/wine && patch -Np1 < /builddir/patches/lol/
