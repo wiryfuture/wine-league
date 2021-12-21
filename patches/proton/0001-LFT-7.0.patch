@@ -1,6 +1,6 @@
-From e2e4b64aa8770bd473ef81e043bc38d6e25306ad Mon Sep 17 00:00:00 2001
+From 7ccbe0e62fed7f593e38088499d9a973c156902e Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Tue, 21 Dec 2021 00:05:15 +0000
+Date: Tue, 21 Dec 2021 00:18:08 +0000
 Subject: [PATCH] LFT-7.0
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH] LFT-7.0
  dlls/kernelbase/memory.c       |    7 +-
  dlls/msvcrt/heap.c             |    4 +
  dlls/ntdll/Makefile.in         |    1 +
- dlls/ntdll/heap.c              |  345 ++++++----
+ dlls/ntdll/heap.c              |  344 ++++++----
  dlls/ntdll/heap_lfh.c          | 1140 ++++++++++++++++++++++++++++++++
  dlls/ntdll/loader.c            |    3 +
  dlls/ntdll/ntdll_misc.h        |   25 +
@@ -17,7 +17,7 @@ Subject: [PATCH] LFT-7.0
  dlls/ntdll/thread.c            |    1 +
  dlls/ntdll/unix/unix_private.h |    1 +
  include/winnt.h                |    3 +-
- 13 files changed, 1702 insertions(+), 226 deletions(-)
+ 13 files changed, 1701 insertions(+), 226 deletions(-)
  create mode 100644 dlls/ntdll/heap_lfh.c
 
 diff --git a/dlls/kernel32/heap.c b/dlls/kernel32/heap.c
@@ -269,20 +269,19 @@ index 185bc563e68..13c3a9743a9 100644
  	loader.c \
  	locale.c \
 diff --git a/dlls/ntdll/heap.c b/dlls/ntdll/heap.c
-index 346bcf3c10c..55ecf4dde30 100644
+index 346bcf3c10c..8a38cfbdf80 100644
 --- a/dlls/ntdll/heap.c
 +++ b/dlls/ntdll/heap.c
-@@ -163,6 +163,9 @@ typedef struct tagHEAP
+@@ -163,6 +163,8 @@ typedef struct tagHEAP
      ARENA_INUSE    **pending_free;  /* Ring buffer for pending free requests */
      RTL_CRITICAL_SECTION critSection; /* Critical section for serialization */
      FREE_LIST_ENTRY *freeList;      /* Free lists */
-+    struct wine_rb_tree freeTree;   /* Free tree */
 +    DWORD            freeMask[HEAP_NB_FREE_LISTS / (8 * sizeof(DWORD))];
 +    int              extended_type; /* Extended heap type */
  } HEAP;
  
  #define HEAP_MAGIC       ((DWORD)('H' | ('E'<<8) | ('A'<<16) | ('P'<<24)))
-@@ -171,12 +174,6 @@ typedef struct tagHEAP
+@@ -171,12 +173,6 @@ typedef struct tagHEAP
  #define COMMIT_MASK          0xffff  /* bitmask for commit/decommit granularity */
  #define MAX_FREE_PENDING     1024    /* max number of free requests to delay */
  
@@ -295,7 +294,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  static HEAP *processHeap;  /* main process heap */
  
  static BOOL HEAP_IsRealArena( HEAP *heapPtr, DWORD flags, LPCVOID block, BOOL quiet );
-@@ -451,21 +448,26 @@ static HEAP *HEAP_GetPtr(
+@@ -451,21 +447,26 @@ static HEAP *HEAP_GetPtr(
               HANDLE heap /* [in] Handle to the heap */
  ) {
      HEAP *heapPtr = heap;
@@ -330,7 +329,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
  
  
-@@ -1331,15 +1333,8 @@ static BOOL HEAP_IsRealArena( HEAP *heapPtr,   /* [in] ptr to the heap */
+@@ -1331,15 +1332,8 @@ static BOOL HEAP_IsRealArena( HEAP *heapPtr,   /* [in] ptr to the heap */
                                *             does not complain    */
  {
      SUBHEAP *subheap;
@@ -346,7 +345,7 @@ index 346bcf3c10c..55ecf4dde30 100644
      if (block)  /* only check this single memory block */
      {
          const ARENA_INUSE *arena = (const ARENA_INUSE *)block - 1;
-@@ -1353,11 +1348,11 @@ static BOOL HEAP_IsRealArena( HEAP *heapPtr,   /* [in] ptr to the heap */
+@@ -1353,11 +1347,11 @@ static BOOL HEAP_IsRealArena( HEAP *heapPtr,   /* [in] ptr to the heap */
                      ERR("Heap %p: block %p is not inside heap\n", heapPtr, block );
                  else if (WARN_ON(heap))
                      WARN("Heap %p: block %p is not inside heap\n", heapPtr, block );
@@ -361,7 +360,7 @@ index 346bcf3c10c..55ecf4dde30 100644
      }
  
      LIST_FOR_EACH_ENTRY( subheap, &heapPtr->subheap_list, SUBHEAP, entry )
-@@ -1367,25 +1362,20 @@ static BOOL HEAP_IsRealArena( HEAP *heapPtr,   /* [in] ptr to the heap */
+@@ -1367,25 +1361,20 @@ static BOOL HEAP_IsRealArena( HEAP *heapPtr,   /* [in] ptr to the heap */
          {
              if (*(DWORD *)ptr & ARENA_FLAG_FREE)
              {
@@ -391,7 +390,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
  
  
-@@ -1512,6 +1502,7 @@ static void heap_set_debug_flags( HANDLE handle )
+@@ -1512,6 +1501,7 @@ static void heap_set_debug_flags( HANDLE handle )
                                                MAX_FREE_PENDING * sizeof(*heap->pending_free) );
          heap->pending_pos = 0;
      }
@@ -399,7 +398,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
  
  
-@@ -1555,11 +1546,13 @@ HANDLE WINAPI RtlCreateHeap( ULONG flags, PVOID addr, SIZE_T totalSize, SIZE_T c
+@@ -1555,11 +1545,13 @@ HANDLE WINAPI RtlCreateHeap( ULONG flags, PVOID addr, SIZE_T totalSize, SIZE_T c
          HEAP *heapPtr = subheap->heap;
          RtlEnterCriticalSection( &processHeap->critSection );
          list_add_head( &processHeap->entry, &heapPtr->entry );
@@ -413,7 +412,7 @@ index 346bcf3c10c..55ecf4dde30 100644
          list_init( &processHeap->entry );
      }
  
-@@ -1650,11 +1643,9 @@ HANDLE WINAPI RtlDestroyHeap( HANDLE heap )
+@@ -1650,11 +1642,9 @@ HANDLE WINAPI RtlDestroyHeap( HANDLE heap )
   */
  void * WINAPI DECLSPEC_HOTPATCH RtlAllocateHeap( HANDLE heap, ULONG flags, SIZE_T size )
  {
@@ -427,7 +426,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  
      /* Validate the parameters */
  
-@@ -1662,34 +1653,47 @@ void * WINAPI DECLSPEC_HOTPATCH RtlAllocateHeap( HANDLE heap, ULONG flags, SIZE_
+@@ -1662,34 +1652,47 @@ void * WINAPI DECLSPEC_HOTPATCH RtlAllocateHeap( HANDLE heap, ULONG flags, SIZE_
      flags &= HEAP_GENERATE_EXCEPTIONS | HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY;
      flags |= heapPtr->flags;
      rounded_size = ROUND_SIZE(size) + HEAP_TAIL_EXTRA_SIZE( flags );
@@ -493,7 +492,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  
      /* Remove the arena from the free list */
  
-@@ -1712,10 +1716,8 @@ void * WINAPI DECLSPEC_HOTPATCH RtlAllocateHeap( HANDLE heap, ULONG flags, SIZE_
+@@ -1712,10 +1715,8 @@ void * WINAPI DECLSPEC_HOTPATCH RtlAllocateHeap( HANDLE heap, ULONG flags, SIZE_
      notify_alloc( pInUse + 1, size, flags & HEAP_ZERO_MEMORY );
      initialize_block( pInUse + 1, size, pInUse->unused_bytes, flags );
  
@@ -506,7 +505,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
  
  
-@@ -1735,8 +1737,7 @@ void * WINAPI DECLSPEC_HOTPATCH RtlAllocateHeap( HANDLE heap, ULONG flags, SIZE_
+@@ -1735,8 +1736,7 @@ void * WINAPI DECLSPEC_HOTPATCH RtlAllocateHeap( HANDLE heap, ULONG flags, SIZE_
   */
  BOOLEAN WINAPI DECLSPEC_HOTPATCH RtlFreeHeap( HANDLE heap, ULONG flags, void *ptr )
  {
@@ -516,7 +515,7 @@ index 346bcf3c10c..55ecf4dde30 100644
      HEAP *heapPtr;
  
      /* Validate the parameters */
-@@ -1752,29 +1753,42 @@ BOOLEAN WINAPI DECLSPEC_HOTPATCH RtlFreeHeap( HANDLE heap, ULONG flags, void *pt
+@@ -1752,29 +1752,42 @@ BOOLEAN WINAPI DECLSPEC_HOTPATCH RtlFreeHeap( HANDLE heap, ULONG flags, void *pt
  
      flags &= HEAP_NO_SERIALIZE;
      flags |= heapPtr->flags;
@@ -570,7 +569,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
  
  
-@@ -1795,10 +1809,8 @@ error:
+@@ -1795,10 +1808,8 @@ error:
   */
  PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size )
  {
@@ -582,7 +581,7 @@ index 346bcf3c10c..55ecf4dde30 100644
      void *ret;
  
      if (!ptr) return NULL;
-@@ -1813,18 +1825,42 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
+@@ -1813,18 +1824,42 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
      flags &= HEAP_GENERATE_EXCEPTIONS | HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY |
               HEAP_REALLOC_IN_PLACE_ONLY;
      flags |= heapPtr->flags;
@@ -630,7 +629,7 @@ index 346bcf3c10c..55ecf4dde30 100644
      }
  
      /* Check if we need to grow the block */
-@@ -1837,12 +1873,12 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
+@@ -1837,12 +1872,12 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
  
          if (rounded_size >= HEAP_MIN_LARGE_BLOCK_SIZE && (flags & HEAP_GROWABLE))
          {
@@ -647,7 +646,7 @@ index 346bcf3c10c..55ecf4dde30 100644
          }
          if ((pNext < (char *)subheap->base + subheap->size) &&
              (*(DWORD *)pNext & ARENA_FLAG_FREE) &&
-@@ -1852,7 +1888,7 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
+@@ -1852,7 +1887,7 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
              ARENA_FREE *pFree = (ARENA_FREE *)pNext;
              list_remove( &pFree->entry );
              pArena->size += (pFree->size & ARENA_SIZE_MASK) + sizeof(*pFree);
@@ -656,7 +655,7 @@ index 346bcf3c10c..55ecf4dde30 100644
              notify_realloc( pArena + 1, oldActualSize, size );
              HEAP_ShrinkBlock( subheap, pArena, rounded_size );
          }
-@@ -1864,7 +1900,7 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
+@@ -1864,7 +1899,7 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
  
              if ((flags & HEAP_REALLOC_IN_PLACE_ONLY) ||
                  !(pNew = HEAP_FindFreeBlock( heapPtr, rounded_size, &newsubheap )))
@@ -665,7 +664,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  
              /* Build the in-use arena */
  
-@@ -1905,24 +1941,8 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
+@@ -1905,24 +1940,8 @@ PVOID WINAPI RtlReAllocateHeap( HANDLE heap, ULONG flags, PVOID ptr, SIZE_T size
  
      /* Return the new arena */
  
@@ -692,7 +691,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
  
  
-@@ -2010,10 +2030,9 @@ BOOLEAN WINAPI RtlUnlockHeap( HANDLE heap )
+@@ -2010,10 +2029,9 @@ BOOLEAN WINAPI RtlUnlockHeap( HANDLE heap )
   */
  SIZE_T WINAPI RtlSizeHeap( HANDLE heap, ULONG flags, const void *ptr )
  {
@@ -705,7 +704,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  
      if (!heapPtr)
      {
-@@ -2022,27 +2041,34 @@ SIZE_T WINAPI RtlSizeHeap( HANDLE heap, ULONG flags, const void *ptr )
+@@ -2022,27 +2040,34 @@ SIZE_T WINAPI RtlSizeHeap( HANDLE heap, ULONG flags, const void *ptr )
      }
      flags &= HEAP_NO_SERIALIZE;
      flags |= heapPtr->flags;
@@ -758,7 +757,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
  
  
-@@ -2062,9 +2088,26 @@ SIZE_T WINAPI RtlSizeHeap( HANDLE heap, ULONG flags, const void *ptr )
+@@ -2062,9 +2087,26 @@ SIZE_T WINAPI RtlSizeHeap( HANDLE heap, ULONG flags, const void *ptr )
   */
  BOOLEAN WINAPI RtlValidateHeap( HANDLE heap, ULONG flags, LPCVOID ptr )
  {
@@ -786,7 +785,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
  
  
-@@ -2232,6 +2275,13 @@ ULONG WINAPI RtlGetProcessHeaps( ULONG count, HANDLE *heaps )
+@@ -2232,6 +2274,13 @@ ULONG WINAPI RtlGetProcessHeaps( ULONG count, HANDLE *heaps )
  NTSTATUS WINAPI RtlQueryHeapInformation( HANDLE heap, HEAP_INFORMATION_CLASS info_class,
                                           PVOID info, SIZE_T size_in, PSIZE_T size_out)
  {
@@ -800,7 +799,7 @@ index 346bcf3c10c..55ecf4dde30 100644
      switch (info_class)
      {
      case HeapCompatibilityInformation:
-@@ -2240,7 +2290,7 @@ NTSTATUS WINAPI RtlQueryHeapInformation( HANDLE heap, HEAP_INFORMATION_CLASS inf
+@@ -2240,7 +2289,7 @@ NTSTATUS WINAPI RtlQueryHeapInformation( HANDLE heap, HEAP_INFORMATION_CLASS inf
          if (size_in < sizeof(ULONG))
              return STATUS_BUFFER_TOO_SMALL;
  
@@ -809,7 +808,7 @@ index 346bcf3c10c..55ecf4dde30 100644
          return STATUS_SUCCESS;
  
      default:
-@@ -2254,6 +2304,43 @@ NTSTATUS WINAPI RtlQueryHeapInformation( HANDLE heap, HEAP_INFORMATION_CLASS inf
+@@ -2254,6 +2303,43 @@ NTSTATUS WINAPI RtlQueryHeapInformation( HANDLE heap, HEAP_INFORMATION_CLASS inf
   */
  NTSTATUS WINAPI RtlSetHeapInformation( HANDLE heap, HEAP_INFORMATION_CLASS info_class, PVOID info, SIZE_T size)
  {
@@ -857,7 +856,7 @@ index 346bcf3c10c..55ecf4dde30 100644
  }
 diff --git a/dlls/ntdll/heap_lfh.c b/dlls/ntdll/heap_lfh.c
 new file mode 100644
-index 00000000000..47b4d9e75df
+index 00000000000..5e38d2d0a3b
 --- /dev/null
 +++ b/dlls/ntdll/heap_lfh.c
 @@ -0,0 +1,1140 @@
@@ -1662,7 +1661,7 @@ index 00000000000..47b4d9e75df
 +        err = "invalid arena alignment";
 +    else if (unlikely(arena == block_arena))
 +    {
-+        if if (unlikely(!LFH_validate_block(flags, (LFH_block *)arena)))
++        if (unlikely(!LFH_validate_block(flags, (LFH_block *)arena)))
 +            err = "invalid block arena";
 +        else if (unlikely(!LFH_validate_arena_free_blocks(flags, arena)))
 +            err = "invalid block arena free list";
