@@ -40,4 +40,4 @@ cd /builddir/wine && autoreconf -f
 # Sample:
 #   # cd /builddir/wine && patch -Np1 < /builddir/patches/PATCHFOLDER/YOURPATCHHERE.patch
 
-cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-pollfd-user-.revents-0.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-reselect-patch.patch

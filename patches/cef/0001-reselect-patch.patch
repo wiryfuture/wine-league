@@ -1,0 +1,104 @@
+From 92e1fb2b9880d304e63c2cc886c70ff7ff03971f Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Tue, 21 Dec 2021 19:07:20 +0000
+Subject: [PATCH] reselect-patch
+
+---
+ dlls/ws2_32/socket.c |  6 ++++++
+ server/fd.c          | 25 +++++++++++++++++++++----
+ 2 files changed, 27 insertions(+), 4 deletions(-)
+
+diff --git a/dlls/ws2_32/socket.c b/dlls/ws2_32/socket.c
+index bf87e7824e5..0eadb163cfe 100644
+--- a/dlls/ws2_32/socket.c
++++ b/dlls/ws2_32/socket.c
+@@ -2524,6 +2524,12 @@ int WINAPI WSAPoll( WSAPOLLFD *fds, ULONG count, int timeout )
+         SetLastError(WSAEFAULT);
+         return SOCKET_ERROR;
+     }
++    if (fds->fd < 1 || fds->events = 0)
++    {
++        SetLastError(WSAEINVAL);
++        fds->revents = 0;
++        return SOCKET_ERROR;
++    }
+ 
+     if (!(sync_event = get_sync_event())) return -1;
+ 
+diff --git a/server/fd.c b/server/fd.c
+index a09fc9edfcf..ad7795b354c 100644
+--- a/server/fd.c
++++ b/server/fd.c
+@@ -544,11 +544,15 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+ 
+     if (events == -1)  /* stop waiting on this fd completely */
+     {
+-        if (pollfd[user].fd == -1) return;  /* already removed */
++        if (pollfd[user].fd == -1) {
++             pollfd[user].revents = 0;
++             return;  /* already removed */
++        }
+         ctl = EPOLL_CTL_DEL;
+     }
+     else if (pollfd[user].fd == -1)
+     {
++        pollfd[user].revents = 0;
+         ctl = EPOLL_CTL_ADD;
+     }
+     else
+@@ -641,12 +645,16 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+ 
+     if (events == -1)  /* stop waiting on this fd completely */
+     {
+-        if (pollfd[user].fd == -1) return;  /* already removed */
++        if (pollfd[user].fd == -1) {
++            pollfd[user].revents = 0;
++            return;  /* already removed */
++        }
+         ev[0].flags |= EV_DELETE;
+         ev[1].flags |= EV_DELETE;
+     }
+     else if (pollfd[user].fd == -1)
+     {
++        pollfd[user].revents = 0;
+         ev[0].flags |= EV_ADD | ((events & POLLIN) ? EV_ENABLE : EV_DISABLE);
+         ev[1].flags |= EV_ADD | ((events & POLLOUT) ? EV_ENABLE : EV_DISABLE);
+     }
+@@ -750,11 +758,15 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
+ 
+     if (events == -1)  /* stop waiting on this fd completely */
+     {
+-        if (pollfd[user].fd == -1) return;  /* already removed */
++        if (pollfd[user].fd == -1) {
++            pollfd[user].revents = 0;
++            return;  /* already removed */
++        }
+         port_dissociate( port_fd, PORT_SOURCE_FD, fd->unix_fd );
+     }
+     else if (pollfd[user].fd == -1)
+     {
++        pollfd[user].revents = 0;
+         ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user );
+     }
+     else
+@@ -1634,11 +1646,16 @@ void set_fd_events( struct fd *fd, int events )
+         pollfd[user].events = POLLERR;
+         pollfd[user].revents = 0;
+     }
+-    else
++    else if (pollfd[user].fd != -1 || !pollfd[user].events)
+     {
+         pollfd[user].fd = fd->unix_fd;
+         pollfd[user].events = events;
+     }
++    else 
++    {
++        pollfd[user].fd = -1;
++        pollfd[user].events = 0;
++    }
+ }
+ 
+ /* prepare an fd for unmounting its corresponding device */
+-- 
+2.33.1
+
