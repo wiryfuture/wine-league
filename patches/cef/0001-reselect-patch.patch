@@ -1,12 +1,12 @@
-From f8ecc250ab5ece69efb828a21714d10a018f8648 Mon Sep 17 00:00:00 2001
+From 39030c37f5004a7bbbffcbc525f0e4e29c581480 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Tue, 21 Dec 2021 20:21:35 +0000
+Date: Tue, 21 Dec 2021 21:15:49 +0000
 Subject: [PATCH] reselect-patch
 
 ---
  dlls/ws2_32/socket.c |  6 ++++++
- server/fd.c          | 25 +++++++++++++++++++++----
- 2 files changed, 27 insertions(+), 4 deletions(-)
+ server/fd.c          | 18 +++++++++++++++---
+ 2 files changed, 21 insertions(+), 3 deletions(-)
 
 diff --git a/dlls/ws2_32/socket.c b/dlls/ws2_32/socket.c
 index bf87e7824e5..885303377bb 100644
@@ -26,7 +26,7 @@ index bf87e7824e5..885303377bb 100644
      if (!(sync_event = get_sync_event())) return -1;
  
 diff --git a/server/fd.c b/server/fd.c
-index a09fc9edfcf..ad7795b354c 100644
+index a09fc9edfcf..e8bae1102db 100644
 --- a/server/fd.c
 +++ b/server/fd.c
 @@ -544,11 +544,15 @@ static inline void set_fd_epoll_events( struct fd *fd, int user, int events )
@@ -81,24 +81,6 @@ index a09fc9edfcf..ad7795b354c 100644
          ret = port_associate( port_fd, PORT_SOURCE_FD, fd->unix_fd, events, (void *)user );
      }
      else
-@@ -1634,11 +1646,16 @@ void set_fd_events( struct fd *fd, int events )
-         pollfd[user].events = POLLERR;
-         pollfd[user].revents = 0;
-     }
--    else
-+    else if (pollfd[user].fd != -1 || !pollfd[user].events)
-     {
-         pollfd[user].fd = fd->unix_fd;
-         pollfd[user].events = events;
-     }
-+    else 
-+    {
-+        pollfd[user].fd = -1;
-+        pollfd[user].events = 0;
-+    }
- }
- 
- /* prepare an fd for unmounting its corresponding device */
 -- 
 2.33.1
 
