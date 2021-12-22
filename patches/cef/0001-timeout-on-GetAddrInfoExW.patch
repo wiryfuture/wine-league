@@ -1,6 +1,6 @@
-From 9351ea92b36e2da642f59408095162c4f5498614 Mon Sep 17 00:00:00 2001
+From 11ebacd3a0cb0e07d9c3f9bcf462cbcd82723c57 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Wed, 22 Dec 2021 15:33:57 +0000
+Date: Wed, 22 Dec 2021 19:13:21 +0000
 Subject: [PATCH] timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] timeout on GetAddrInfoExW
  1 file changed, 186 insertions(+), 11 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..79bd00ba93c 100644
+index 492400b17a7..03859597014 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -30,7 +30,7 @@ index 492400b17a7..79bd00ba93c 100644
 +typedef struct getaddrinfoWParams {
 +    const WCHAR *nodename;
 +    const WCHAR *servname;
-+    const struct addrinfoexW *hints;
++    const struct addrinfo *hints;
 +    struct addrinfoexW **res;
 +    OVERLAPPED *overlapped;
 +    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine;
@@ -53,8 +53,8 @@ index 492400b17a7..79bd00ba93c 100644
 +    int ret = EAI_MEMORY, len, i;
 +    char *nodenameA = NULL, *servnameA = NULL;
 +    struct addrinfo *resA;
-+    struct getaddrinfoWParams *context = (struct getaddrinfoWParams) pParam;
-+    WCHAR *local_nodenameW = context->nodename;
++    struct getaddrinfoWParams *context = (struct getaddrinfoWParams*) pParam;
++    WCHAR *local_nodenameW = (WCHAR *)context->nodename;
 +
 +    context->res = NULL;
 +    if (context->nodename)
@@ -168,7 +168,7 @@ index 492400b17a7..79bd00ba93c 100644
 +    LARGE_INTEGER StartingTime;
 +    LARGE_INTEGER EndingTime;
 +    LARGE_INTEGER ElapsedMicroseconds;
-+    struct getaddrinfoWParams getaddrinfoWParams_struct;
++    LPVOID getaddrinfoWParams_struct;
  
      TRACE( "name %s, servname %s, namespace %u, namespace_id %s)\n",
             debugstr_w(name), debugstr_w(servname), namespace, debugstr_guid(namespace_id) );
@@ -196,11 +196,11 @@ index 492400b17a7..79bd00ba93c 100644
 +    }
 +
 +    /* Args for a thread function have to go in a struct */
-+    *getaddrinfoWParams_struct = (getaddrinfoWParams) {
++    *getaddrinfoWParams_struct = {
 +        .nodename = name,
 +        .servname = servname,
 +        .hints = hints,
-+        .res = result,
++        .res = *result,
 +        .overlapped = overlapped,
 +        .completion_routine = completion_routine
 +    };
@@ -221,10 +221,10 @@ index 492400b17a7..79bd00ba93c 100644
 +
 +    while (ElapsedMicroseconds.QuadPart < (LONGLONG)timeout->tv_usec + ((LONGLONG)(timeout->tv_sec))*1000000 )
 +    {
-+        GetExitCodeThread(getaddrinfoW_thread, exitCode);
-+        if ( *exitCode != STILL_ACTIVE)
++        GetExitCodeThread(getaddrinfoW_thread, &exitCode);
++        if ( &exitCode != STILL_ACTIVE)
 +        {
-+            ret = (int)*exitCode;
++            ret = (int)&exitCode;
 +            break;
 +        }
 +        QueryPerformanceCounter(&EndingTime);
