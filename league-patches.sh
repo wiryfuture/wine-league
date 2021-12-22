@@ -41,5 +41,4 @@ cd /builddir/wine && autoreconf -f
 #   # cd /builddir/wine && patch -Np1 < /builddir/patches/PATCHFOLDER/YOURPATCHHERE.patch
 
 cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-reselect-patch.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-ignore-unsupported-handle.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-timeout-on-GetAddrInfoExW.patch
