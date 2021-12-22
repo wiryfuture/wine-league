@@ -1,6 +1,6 @@
-From 11ebacd3a0cb0e07d9c3f9bcf462cbcd82723c57 Mon Sep 17 00:00:00 2001
+From ba166e963a436f105dd9f097d545bcc1d6585526 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Wed, 22 Dec 2021 19:13:21 +0000
+Date: Wed, 22 Dec 2021 19:35:25 +0000
 Subject: [PATCH] timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] timeout on GetAddrInfoExW
  1 file changed, 186 insertions(+), 11 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 492400b17a7..03859597014 100644
+index 492400b17a7..fa73d8970c2 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -162,13 +162,13 @@ index 492400b17a7..03859597014 100644
                             LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine, HANDLE *handle )
  {
      int ret;
-+    LPDWORD *exitCode;
++    LPDWORD exitCode;
 +    HANDLE getaddrinfoW_thread;
 +    LARGE_INTEGER Frequency;
 +    LARGE_INTEGER StartingTime;
 +    LARGE_INTEGER EndingTime;
 +    LARGE_INTEGER ElapsedMicroseconds;
-+    LPVOID getaddrinfoWParams_struct;
++    getaddrinfoWParams getaddrinfoWParams_struct;
  
      TRACE( "name %s, servname %s, namespace %u, namespace_id %s)\n",
             debugstr_w(name), debugstr_w(servname), namespace, debugstr_guid(namespace_id) );
@@ -196,7 +196,7 @@ index 492400b17a7..03859597014 100644
 +    }
 +
 +    /* Args for a thread function have to go in a struct */
-+    *getaddrinfoWParams_struct = {
++    getaddrinfoWParams_struct = (getaddrinfoWParams) {
 +        .nodename = name,
 +        .servname = servname,
 +        .hints = hints,
@@ -205,7 +205,7 @@ index 492400b17a7..03859597014 100644
 +        .completion_routine = completion_routine
 +    };
 +
-+    getaddrinfoW_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getaddrinfoW_wSTRUCT, getaddrinfoWParams_struct, 0, NULL);
++    getaddrinfoW_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getaddrinfoW_wSTRUCT, &getaddrinfoWParams_struct, 0, NULL);
 +    if ( !getaddrinfoW_thread ) /* Null on creation (no handle) means an error occured */
 +    {
 +        SetLastError( WSAECONNABORTED );
@@ -221,10 +221,10 @@ index 492400b17a7..03859597014 100644
 +
 +    while (ElapsedMicroseconds.QuadPart < (LONGLONG)timeout->tv_usec + ((LONGLONG)(timeout->tv_sec))*1000000 )
 +    {
-+        GetExitCodeThread(getaddrinfoW_thread, &exitCode);
-+        if ( &exitCode != STILL_ACTIVE)
++        GetExitCodeThread(getaddrinfoW_thread, exitCode);
++        if ( (int)*exitCode != STILL_ACTIVE)
 +        {
-+            ret = (int)&exitCode;
++            ret = (int)*exitCode;
 +            break;
 +        }
 +        QueryPerformanceCounter(&EndingTime);
@@ -232,7 +232,7 @@ index 492400b17a7..03859597014 100644
 +        ElapsedMicroseconds.QuadPart *= 1000000;
 +        ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 +    }
-+    if ( *exitCode == STILL_ACTIVE )
++    if ( (int)*exitCode == STILL_ACTIVE )
 +    {
 +        /*TerminateThread(getaddrinfoW_thread, NULL) */ /* can't really tell what will get terminated so we kinda just have to let it leak */
 +        SetLastError( WSAETIMEDOUT );
