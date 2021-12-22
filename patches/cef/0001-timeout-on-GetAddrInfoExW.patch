@@ -1,6 +1,6 @@
-From 44127306d6d755d40f885543e5b99c2513a6ef68 Mon Sep 17 00:00:00 2001
+From 9351ea92b36e2da642f59408095162c4f5498614 Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Wed, 22 Dec 2021 11:42:03 +0000
+Date: Wed, 22 Dec 2021 15:33:57 +0000
 Subject: [PATCH] timeout on GetAddrInfoExW
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] timeout on GetAddrInfoExW
  1 file changed, 186 insertions(+), 11 deletions(-)
 
 diff --git a/dlls/ws2_32/protocol.c b/dlls/ws2_32/protocol.c
-index 239e4d14cd2..9146e4fe433 100644
+index 492400b17a7..79bd00ba93c 100644
 --- a/dlls/ws2_32/protocol.c
 +++ b/dlls/ws2_32/protocol.c
 @@ -18,19 +18,30 @@
@@ -44,7 +44,7 @@ index 239e4d14cd2..9146e4fe433 100644
  static char *get_fqdn(void)
  {
      char *ret;
-@@ -478,6 +489,113 @@ end:
+@@ -394,6 +405,113 @@ end:
      return ret;
  }
  
@@ -53,7 +53,7 @@ index 239e4d14cd2..9146e4fe433 100644
 +    int ret = EAI_MEMORY, len, i;
 +    char *nodenameA = NULL, *servnameA = NULL;
 +    struct addrinfo *resA;
-+    struct getaddrinfoWParams *context = (struct getaddrinfoWParams*) &pParam;
++    struct getaddrinfoWParams *context = (struct getaddrinfoWParams) pParam;
 +    WCHAR *local_nodenameW = context->nodename;
 +
 +    context->res = NULL;
@@ -158,11 +158,11 @@ index 239e4d14cd2..9146e4fe433 100644
  
  /***********************************************************************
   *      GetAddrInfoExW   (ws2_32.@)
-@@ -488,6 +606,13 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+@@ -404,6 +522,13 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
                             LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine, HANDLE *handle )
  {
      int ret;
-+    LPWORD exitCode;
++    LPDWORD *exitCode;
 +    HANDLE getaddrinfoW_thread;
 +    LARGE_INTEGER Frequency;
 +    LARGE_INTEGER StartingTime;
@@ -172,7 +172,7 @@ index 239e4d14cd2..9146e4fe433 100644
  
      TRACE( "name %s, servname %s, namespace %u, namespace_id %s)\n",
             debugstr_w(name), debugstr_w(servname), namespace, debugstr_guid(namespace_id) );
-@@ -496,15 +621,65 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
+@@ -412,15 +537,65 @@ int WINAPI GetAddrInfoExW( const WCHAR *name, const WCHAR *servname, DWORD names
          FIXME( "Unsupported namespace %u\n", namespace );
      if (namespace_id)
          FIXME( "Unsupported namespace_id %s\n", debugstr_guid(namespace_id) );
@@ -196,7 +196,7 @@ index 239e4d14cd2..9146e4fe433 100644
 +    }
 +
 +    /* Args for a thread function have to go in a struct */
-+    getaddrinfoWParams_struct = (getaddrinfoWParams) {
++    *getaddrinfoWParams_struct = (getaddrinfoWParams) {
 +        .nodename = name,
 +        .servname = servname,
 +        .hints = hints,
@@ -204,7 +204,7 @@ index 239e4d14cd2..9146e4fe433 100644
 +        .overlapped = overlapped,
 +        .completion_routine = completion_routine
 +    };
-+    
++
 +    getaddrinfoW_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getaddrinfoW_wSTRUCT, getaddrinfoWParams_struct, 0, NULL);
 +    if ( !getaddrinfoW_thread ) /* Null on creation (no handle) means an error occured */
 +    {
@@ -222,9 +222,9 @@ index 239e4d14cd2..9146e4fe433 100644
 +    while (ElapsedMicroseconds.QuadPart < (LONGLONG)timeout->tv_usec + ((LONGLONG)(timeout->tv_sec))*1000000 )
 +    {
 +        GetExitCodeThread(getaddrinfoW_thread, exitCode);
-+        if ( exitCode != STILL_ACTIVE)
++        if ( *exitCode != STILL_ACTIVE)
 +        {
-+            ret = (int)exitCode;
++            ret = (int)*exitCode;
 +            break;
 +        }
 +        QueryPerformanceCounter(&EndingTime);
@@ -232,7 +232,7 @@ index 239e4d14cd2..9146e4fe433 100644
 +        ElapsedMicroseconds.QuadPart *= 1000000;
 +        ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 +    }
-+    if ( exitCode == STILL_ACTIVE )
++    if ( *exitCode == STILL_ACTIVE )
 +    {
 +        /*TerminateThread(getaddrinfoW_thread, NULL) */ /* can't really tell what will get terminated so we kinda just have to let it leak */
 +        SetLastError( WSAETIMEDOUT );
