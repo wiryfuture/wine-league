@@ -1,0 +1,72 @@
+From 84966023ae2811bb50b4e6c2643694df1fe8eb92 Mon Sep 17 00:00:00 2001
+From: Philip Wilk <wiryfuture@gmail.com>
+Date: Thu, 23 Dec 2021 14:30:55 +0000
+Subject: [PATCH] faster-reselect-patches
+
+---
+ dlls/ws2_32/socket.c | 6 ++++++
+ server/fd.c          | 1 +
+ server/sock.c        | 8 +++++---
+ 3 files changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/dlls/ws2_32/socket.c b/dlls/ws2_32/socket.c
+index bf87e7824e5..f107455c040 100644
+--- a/dlls/ws2_32/socket.c
++++ b/dlls/ws2_32/socket.c
+@@ -2524,6 +2524,12 @@ int WINAPI WSAPoll( WSAPOLLFD *fds, ULONG count, int timeout )
+         SetLastError(WSAEFAULT);
+         return SOCKET_ERROR;
+     }
++    if (fds->fd == -1)
++    {
++        SetLastError(WSAEINVAL);
++        fds->revents = 0;
++        return SOCKET_ERROR;
++    }
+ 
+     if (!(sync_event = get_sync_event())) return -1;
+ 
+diff --git a/server/fd.c b/server/fd.c
+index a09fc9edfcf..aed5480ce40 100644
+--- a/server/fd.c
++++ b/server/fd.c
+@@ -1620,6 +1620,7 @@ static unsigned int check_sharing( struct fd *fd, unsigned int access, unsigned
+     return 0;
+ }
+ 
++
+ /* set the events that select waits for on this fd */
+ void set_fd_events( struct fd *fd, int events )
+ {
+diff --git a/server/sock.c b/server/sock.c
+index 50bfc08e145..aab4a1db39c 100644
+--- a/server/sock.c
++++ b/server/sock.c
+@@ -532,9 +532,10 @@ void sock_init(void)
+     }
+ }
+ 
++
+ static int sock_reselect( struct sock *sock )
+ {
+-    int ev = sock_get_poll_events( sock->fd );
++    int ev = sock_get_poll_events( sock );
+ 
+     if (debug_level)
+         fprintf(stderr,"sock_reselect(%p): new mask %x\n", sock, ev);
+@@ -1130,9 +1131,10 @@ static int poll_flags_from_afd( struct sock *sock, int flags )
+     return ev;
+ }
+ 
+-static int sock_get_poll_events( struct fd *fd )
++
++static int sock_get_poll_events( struct sock *sock )
+ {
+-    struct sock *sock = get_fd_user( fd );
++    struct fd *fd = sock->fd;
+     unsigned int mask = sock->mask & ~sock->reported_events;
+     struct poll_req *req;
+     int ev = 0;
+-- 
+2.33.1
+

@@ -32,13 +32,14 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-6.15-fix.patch # thi
 # update patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lol-update-fix.patch
 
-/builddir/wine/dlls/winevulkan/make_vulkan
-/builddir/wine/tools/make_requests
-cd /builddir/wine && autoreconf -f
-
 # Add your patches here:
 # Sample:
 #   # cd /builddir/wine && patch -Np1 < /builddir/patches/PATCHFOLDER/YOURPATCHHERE.patch
 
 cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-reselect-patch.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-timeout-on-GetAddrInfoExW.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-pollfd-user-.revents-0.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-faster-reselect-patches.patch
+
+/builddir/wine/dlls/winevulkan/make_vulkan
+/builddir/wine/tools/make_requests
+cd /builddir/wine && autoreconf -f
