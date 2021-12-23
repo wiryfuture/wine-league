@@ -36,8 +36,8 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lol-update-fix.patch
 # Sample:
 #   # cd /builddir/wine && patch -Np1 < /builddir/patches/PATCHFOLDER/YOURPATCHHERE.patch
 
-cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-ignore-unsupported-handle.patch
-#cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-pollfd-user-.revents-0.patch
+#cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-ignore-unsupported-handle.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-pollfd-user-.revents-0.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-faster-reselect-patches.patch
 
 /builddir/wine/dlls/winevulkan/make_vulkan
