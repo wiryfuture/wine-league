@@ -1,13 +1,13 @@
-From 84966023ae2811bb50b4e6c2643694df1fe8eb92 Mon Sep 17 00:00:00 2001
+From 77ddfeaed41a0146b6359030cdbceebf7aaef4dc Mon Sep 17 00:00:00 2001
 From: Philip Wilk <wiryfuture@gmail.com>
-Date: Thu, 23 Dec 2021 14:30:55 +0000
+Date: Thu, 23 Dec 2021 17:04:50 +0000
 Subject: [PATCH] faster-reselect-patches
 
 ---
- dlls/ws2_32/socket.c | 6 ++++++
- server/fd.c          | 1 +
- server/sock.c        | 8 +++++---
- 3 files changed, 12 insertions(+), 3 deletions(-)
+ dlls/ws2_32/socket.c |  6 ++++++
+ server/fd.c          |  1 +
+ server/sock.c        | 10 ++++++----
+ 3 files changed, 13 insertions(+), 4 deletions(-)
 
 diff --git a/dlls/ws2_32/socket.c b/dlls/ws2_32/socket.c
 index bf87e7824e5..f107455c040 100644
@@ -39,9 +39,18 @@ index a09fc9edfcf..aed5480ce40 100644
  void set_fd_events( struct fd *fd, int events )
  {
 diff --git a/server/sock.c b/server/sock.c
-index 50bfc08e145..aab4a1db39c 100644
+index 50bfc08e145..01d3af39854 100644
 --- a/server/sock.c
 +++ b/server/sock.c
+@@ -227,7 +227,7 @@ static void sock_destroy( struct object *obj );
+ static struct object *sock_get_ifchange( struct sock *sock );
+ static void sock_release_ifchange( struct sock *sock );
+ 
+-static int sock_get_poll_events( struct fd *fd );
++static int sock_get_poll_events( struct sock *sock );
+ static void sock_poll_event( struct fd *fd, int event );
+ static enum server_fd_type sock_get_fd_type( struct fd *fd );
+ static int sock_ioctl( struct fd *fd, ioctl_code_t code, struct async *async );
 @@ -532,9 +532,10 @@ void sock_init(void)
      }
  }
