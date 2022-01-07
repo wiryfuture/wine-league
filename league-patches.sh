@@ -36,8 +36,10 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lol-update-fix.patch
 # Sample:
 #   # cd /builddir/wine && patch -Np1 < /builddir/patches/PATCHFOLDER/YOURPATCHHERE.patch
 
-#cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-ignore-unsupported-handle.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-pollfd-user-.revents-0.patch
+# possible winepatch from https://bugs.winehq.org/show_bug.cgi?id=51442
+cd /builddir/wine && patch -Np1 < /builddir/patches/wine/wine.git-51e5995d47b7de9a2d0d6a40f7eb3e3c11b83cf2.patch
+
+# fractional netcode speed up
 cd /builddir/wine && patch -Np1 < /builddir/patches/cef/0001-faster-reselect-patches.patch
 
 /builddir/wine/dlls/winevulkan/make_vulkan

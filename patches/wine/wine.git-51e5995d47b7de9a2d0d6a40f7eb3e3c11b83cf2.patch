@@ -1,0 +1,47 @@
+From 51e5995d47b7de9a2d0d6a40f7eb3e3c11b83cf2 Mon Sep 17 00:00:00 2001
+From: Zebediah Figura <zfigura@codeweavers.com>
+Date: Thu, 6 Jan 2022 17:26:43 -0600
+Subject: [PATCH] server: Avoid reporting POLLOUT on connection failure in
+ poll_single_socket().
+
+Ideally we should be using sock_get_poll_events() and sock_poll_event() instead,
+but that seems like an overly risky change for this late in code freeze.
+
+Wine-Bug: https://bugs.winehq.org/show_bug.cgi?id=51442
+Signed-off-by: Zebediah Figura <zfigura@codeweavers.com>
+Signed-off-by: Alexandre Julliard <julliard@winehq.org>
+---
+ dlls/ws2_32/tests/sock.c | 2 +-
+ server/sock.c            | 3 +++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/dlls/ws2_32/tests/sock.c b/dlls/ws2_32/tests/sock.c
+index 782b1e59729..054e597b719 100644
+--- a/dlls/ws2_32/tests/sock.c
++++ b/dlls/ws2_32/tests/sock.c
+@@ -6830,7 +6830,7 @@ static void test_WSAPoll(void)
+         fds[0].events = POLLRDNORM | POLLRDBAND | POLLWRNORM;
+         fds[0].revents = 0xdead;
+         ret = pWSAPoll(fds, 1, 10000);
+-        todo_wine ok(ret == 1, "got %d\n", ret);
++        ok(ret == 1, "got %d\n", ret);
+         todo_wine ok(fds[0].revents == (POLLWRNORM | POLLHUP | POLLERR), "got events %#x\n", fds[0].revents);
+ 
+         len = sizeof(err);
+diff --git a/server/sock.c b/server/sock.c
+index c7378306511..650e67a2e0a 100644
+--- a/server/sock.c
++++ b/server/sock.c
+@@ -2979,6 +2979,9 @@ static int poll_single_socket( struct sock *sock, int mask )
+     if (pollfd.events < 0 || poll( &pollfd, 1, 0 ) < 0)
+         return 0;
+ 
++    if (sock->state == SOCK_CONNECTING && (pollfd.revents & (POLLERR | POLLHUP)))
++        pollfd.revents &= ~POLLOUT;
++
+     if ((mask & AFD_POLL_HUP) && (pollfd.revents & POLLIN) && sock->type == WS_SOCK_STREAM)
+     {
+         char dummy;
+-- 
+2.20.1
+
