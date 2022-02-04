@@ -17,20 +17,29 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/04-proton-LAA_staging
 # esync patch | lets you use esync
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/03-proton-fsync_staging.patch
 # proton patches that improve performance
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/40-proton-futex2.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC-update-replace.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lfh-non-proton-pre-needed.patch # needed for league for some reason
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/50-proton_LFH.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-winelib.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-iphlpapi-212361.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-ntdll-socket-212770.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/hotfix-bf4_ping.patch
+# set default wine verison to win10
+cd /builddir/wine && patch -Np1 < /builddir/patches/wine/28-proton-win10_default.patch
+# spoof win81 for edgeview
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/60-proton-14-msedgewebview-registry.patch
+# font linking
+cd /builddir/wine && patch -Np1 < /builddir/patches/proton/51-proton_fonts.patch
+# winsock on unix
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/include-allow_using_windows_sockets_on_unix.patch
 
-# Apply GE's league patche
+# Apply GE's league patches
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/alternative_patch_by_using_a_fake_cs_segment.patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-6.15-fix.patch # this is an anticheat patch. Must be present in some form.
-# update patch
-cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lol-update-fix.patch
+# Change proc syscall for anticheat to work
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-6.17+-syscall-fix.patch
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-broken-client-update-fix.patch
+# patches for garena windows or smth
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-garena-childwindow.patch
+# sio_back_query
+cd /builddir/wine && patch -Np1 < /builddir/patches/lol/LoL-launcher-client-connectivity-fix-0001-ws2_32-Return-a-valid-value-for-WSAIoctl-SIO_IDEAL_S.patch
+
 
 /builddir/wine/dlls/winevulkan/make_vulkan
 /builddir/wine/tools/make_requests
