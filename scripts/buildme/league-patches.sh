@@ -21,8 +21,6 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC-update-replace.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lfh-non-proton-pre-needed.patch # needed for league for some reason
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/50-proton_LFH.patch
-# font linking
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/51-proton_fonts.patch
 # winsock on unix
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/include-allow_using_windows_sockets_on_unix.patch
 
