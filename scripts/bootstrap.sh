@@ -14,7 +14,7 @@
 ####################################
 # Install build tools, non-arch dependent
 dnf groupinstall -y "C Development Tools and Libraries" "Development Tools"
-dnf install -y git
+dnf install -y git wget2
 
 # Enable RPMFusion repo
 dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm
@@ -36,7 +36,7 @@ dnf install -y https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-releas
 dnf install -y checkinstall
 
 # Get sccache
-wget https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-aarch64-unknown-linux-musl.tar.gz
+wget2 https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-aarch64-unknown-linux-musl.tar.gz
 tar -xf sccache-v0.2.15-aarch64-unknown-linux-musl.tar.gz
 mv sccache-v0.2.15-aarch64-unknown-linux-musl/sccache ./sccache
 
