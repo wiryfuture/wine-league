@@ -24,4 +24,5 @@ PKGTYPE=${PKGTYPE:="-R"}
 cd /builddir/out64 && CC="ccache gcc" ../wine/configure --enable-win64 && make -j"$THREADS"
 cd /builddir/out32 && PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure --with-wine64=../out64 && make -j"$THREADS"
 # create packages
-cd /builddir/out32 && checkinstall --install=no --pakdir=/exports/out32 $PKGTYPE && cd /builddir/out64 && checkinstall --install=no --pakdir=/exports/out64 $PKGTYPE
+cd /builddir/out32 && checkinstall --install=no --pkgname="wine" --pkgarch="i686" --provides="wine" --pakdir=/exports/out32 $PKGTYPE
+cd /builddir/out64 && checkinstall --install=no --pkgname="wine" --pkgarch="x86_64" --provides="wine" --pakdir=/exports/out64 $PKGTYPE
