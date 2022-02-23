@@ -21,10 +21,6 @@ cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/49-proton_QPC-update-replace.patch
 cd /builddir/wine && patch -Np1 < /builddir/patches/lol/lfh-non-proton-pre-needed.patch # needed for league for some reason
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/50-proton_LFH.patch
-# set default wine verison to win10
-cd /builddir/wine && patch -Np1 < /builddir/patches/wine/28-proton-win10_default.patch
-# spoof win81 for edgeview
-cd /builddir/wine && patch -Np1 < /builddir/patches/proton/60-proton-14-msedgewebview-registry.patch
 # font linking
 cd /builddir/wine && patch -Np1 < /builddir/patches/proton/51-proton_fonts.patch
 # winsock on unix
