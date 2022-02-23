@@ -34,8 +34,7 @@ dnf install -y alsa-plugins-pulseaudio.i686 glibc-devel.i686 glibc-devel libgcc.
 dnf install -y https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-34-2.noarch.rpm
 # Packaging deps
 dnf install -y checkinstall
-ccache -F 0
-ccache -M 0
+chmod -R 777 /ccache
 
 # Create directories for wine source
 mkdir -p /builddir/wine /builddir/out64 /builddir/out32 /builddir/patches /builddir/wine-staging /exports/out32 /exports/out64
