@@ -25,7 +25,7 @@ RUN scripts/bootstrap.sh
 COPY scripts/execute.sh scripts/.
 COPY scripts/buildme scripts/buildme
 COPY patches/. /builddir/patches/
-RUN chmod -R 644 scripts/*
+RUN chmod -R 644 scripts/*.sh
 
 # # git:// WINE_GIT
 # # # Wine repository url
