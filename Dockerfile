@@ -1,4 +1,4 @@
-FROM fedora:latest as builder
+FROM fedora:latest as bootstrap
 ####################################
 # Desc
 ####################################
@@ -13,67 +13,57 @@ FROM fedora:latest as builder
 ENV CCACHE_DIR=/ccache
 
 ####################################
-# et al   
+# et al
 ####################################
 WORKDIR /builddir
+COPY scripts/bootstrap.sh scripts/.
 #RUN --mount=type=cache,target=/ccache/
 
-# # bool BUILD64BIT
-# # # Build 64bit wine or not. Defaults to true.
-ARG BUILD64BIT
 # Prepare environment with tools/deps
-COPY bootstrap.sh ./.
-RUN ./bootstrap.sh
+RUN scripts/bootstrap.sh
+
+COPY scripts/execute.sh scripts/.
+COPY scripts/buildme scripts/buildme
+COPY patches/. /builddir/patches/
 
 # # git:// WINE_GIT
-# # # Wine repository url 
-ARG WINE_GIT
+# # # Wine repository url
+# ARG WINE_GIT
 # # tags/TAG||BRANCH WINE_TAG
 # # # Wine branch or tag to checkout to. Tags must be prefixed by "tags/"
-ARG WINE_TAG
-# Clone wine source
-COPY wine-source.sh ./.
-RUN ./wine-source.sh
+# ARG WINE_TAG
 
 # # https://example.com/wine-staging.git STAGING_GIT
-# # # Wine-STAGING repository url 
-ARG STAGING_GIT
+# # # Wine-STAGING repository url
+# ARG STAGING_GIT
 # # tags/TAG||BRANCH STAGING_TAG
 # # # Wine-STAGING branch or tag to checkout to. Tags must be prefixed by "tags/"
-ARG STAGING_TAG
+# ARG STAGING_TAG
 # # "-W patchsetName -W otherpatchssetName" PATCH_EXCLUDES
 # # # Staging patchsets that should be excluded. Each patchset requires -W to prefix it.
 # # # You can find the patchset names here https://github.com/wine-staging/wine-staging/blob/master/patches/patchinstall.sh
-ARG PATCH_EXCLUDES
-# Apply wine staging patches
-COPY staging-patches.sh ./.
-RUN ./staging-patches.sh
-
-# Apply league specific patches
-COPY league-patches.sh ./.
-COPY patches/. /builddir/patches/
-RUN ./league-patches.sh
+# ARG PATCH_EXCLUDES
 
 # # int THREADS
 # # # How many threads make will use to compile. Defaults to all available.
-ARG THREADS
-# Build wine
-COPY build.sh ./.
-RUN ./build.sh
+# ARG THREADS
+# # STRING PKGTYPE
+# # # What packages do we want? Defaults to R for RPM
+# # # Can have "-D" for Debian, "-R" for RPM and "-S" for slackware (who uses that again?)
+# ARG PKGTYPE
 
-# Copy to one folder
-RUN mkdir -p /builddir/build && cp -r /builddir/out32 /builddir/build/. && cp -r /builddir/out64 /builddir/build/. && cp -r /builddir/wine /builddir/build/. 
-# Copy our builds to the export folder
-CMD cp -r /builddir/build/* /exports/. && chmod -R 777 /exports
+#  Run build scripts
+CMD scripts/execute.sh && chmod -R 777 /exports
 
 # If you switch to experimental mode like in this answer, you actually get a working ccache https://stackoverflow.com/a/56833198
 # building this WILL take a while
-# build commands: 
-#   # docker build . -t wiryfuture/wine-league --build-arg WINE_TAG=tags/wine-7.0 --build-arg STAGING_TAG=tags/v7.0
-#   # buildah bud --build-arg WINE_TAG=tags/wine-7.0 --build-arg STAGING_TAG=tags/v7.0 --layers=true -t wiryfuture/wine-league .
-# final command: 
-#   # docker run -v /folder/for/wine:/exports wiryfuture/wine-league
-#   # podman run -v /folder/for/wine:/exports localhost/wiryfuture/wine-league
+
+# build commands:
+#   # docker build . -t wiryfuture/wine-league
+#   # buildah bud --layers=true -t wiryfuture/wine-league .
+# final command:
+#   # docker run -v /folder/for/wine:/exports wiryfuture/wine-league --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0
+#   # podman run -v /folder/for/wine:/exports localhost/wiryfuture/wine-league --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0
 
 # Effective debugging command
 # WINEPREFIX=~/Games/league-of-legends WINEARCH=win32 WINEDEBUG=warn+all,+server ./wine "/home/philip/Games/league-of-legends/drive_c/Riot Games/Riot Client/RiotClientServices.exe"  --launch-patchline=live --launch-product=league_of_legends
