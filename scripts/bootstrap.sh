@@ -35,7 +35,5 @@ dnf install -y https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-releas
 # Packaging deps
 dnf install -y checkinstall
 
-setenforce 0
-
 # Create directories for wine source
 mkdir -p /builddir/wine /builddir/out64 /builddir/out32 /builddir/patches /builddir/wine-staging /exports/out32 /exports/out64
