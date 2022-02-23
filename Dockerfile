@@ -55,9 +55,10 @@ COPY patches/. /builddir/patches/
 #  Run build scripts
 CMD scripts/execute.sh && chmod -R 777 /exports
 
-# If you switch to experimental mode like in this answer, you actually get a working ccache https://stackoverflow.com/a/56833198
-# building this WILL take a while
-
+# Building this WILL take a while
+# If you mount a dir at /ccache, you will benefit from build caching
+# mount dir at /exports to get your packages
+#
 # build commands:
 #   # docker build . -t wiryfuture/wine-league
 #   # buildah bud --layers=true -t wiryfuture/wine-league .
