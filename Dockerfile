@@ -5,14 +5,6 @@ FROM fedora:latest as bootstrap
 # Fedora container for building WINE using league patches. Should be easy to Modify.
 
 ####################################
-# ENVs
-####################################
-# ccache
-# # PATH CCACHE_DIR
-# # # Directory of ccache cache
-ENV CCACHE_DIR=/ccache
-
-####################################
 # et al
 ####################################
 WORKDIR /builddir

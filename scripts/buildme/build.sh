@@ -4,6 +4,10 @@
 ####################################
 # Build wine source.
 
+# remember to set ccache dir chmod to chmod g+s
+export CCACHE_DIR=/ccache
+export CCACHE_UMASK=002
+
 ####################################
 # PARAMS
 ####################################
@@ -20,7 +24,6 @@ PKGTYPE=${PKGTYPE:="-R"}
 ####################################
 # et al
 ####################################
-sudo chmod -R 777 /ccache
 # 64 bit build process (includes 32 bit. will take about twice the time because.)
 cd /builddir/out64 && CC="ccache gcc" ../wine/configure --enable-win64 && make -j"$THREADS"
 cat /builddir/out64/config.log
