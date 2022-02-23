@@ -59,6 +59,7 @@ CMD scripts/execute.sh && chmod -R 777 /exports
 # Building this WILL take a while
 # If you mount a dir at /ccache, you will benefit from build caching
 # mount dir at /exports to get your packages
+# remember, container needs perms for both these dirs
 #
 # build commands:
 #   # docker build . -t wiryfuture/wine-league
@@ -68,6 +69,6 @@ CMD scripts/execute.sh && chmod -R 777 /exports
 #   # podman run -v /folder/for/wine:/exports --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 localhost/wiryfuture/wine-league
 #
 #   # podman run -v /folder/for/wine:/exports -v /folder/for/ccache:/ccache --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 localhost/wiryfuture/wine-league
-
+#
 # Effective debugging command
 # WINEPREFIX=~/Games/league-of-legends WINEARCH=win32 WINEDEBUG=warn+all,+server ./wine "/home/philip/Games/league-of-legends/drive_c/Riot Games/Riot Client/RiotClientServices.exe"  --launch-patchline=live --launch-product=league_of_legends
