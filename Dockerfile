@@ -25,6 +25,7 @@ RUN scripts/bootstrap.sh
 COPY scripts/execute.sh scripts/.
 COPY scripts/buildme scripts/buildme
 COPY patches/. /builddir/patches/
+RUN chmod -R 644 scripts/*
 
 # # git:// WINE_GIT
 # # # Wine repository url
@@ -63,8 +64,10 @@ CMD scripts/execute.sh && chmod -R 777 /exports
 #   # docker build . -t wiryfuture/wine-league
 #   # buildah bud --layers=true -t wiryfuture/wine-league .
 # final command:
-#   # docker run -v /folder/for/wine:/exports wiryfuture/wine-league --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0
-#   # podman run -v /folder/for/wine:/exports localhost/wiryfuture/wine-league --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0
+#   # docker run -v /folder/for/wine:/exports --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 wiryfuture/wine-league
+#   # podman run -v /folder/for/wine:/exports --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 localhost/wiryfuture/wine-league
+#
+#   # podman run -v /folder/for/wine:/exports -v /folder/for/ccache:/ccache --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 localhost/wiryfuture/wine-league
 
 # Effective debugging command
 # WINEPREFIX=~/Games/league-of-legends WINEARCH=win32 WINEDEBUG=warn+all,+server ./wine "/home/philip/Games/league-of-legends/drive_c/Riot Games/Riot Client/RiotClientServices.exe"  --launch-patchline=live --launch-product=league_of_legends
