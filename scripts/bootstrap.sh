@@ -17,9 +17,6 @@ dnf groupinstall -y "C Development Tools and Libraries" "Development Tools"
 dnf install -y git ccache
 # shellcheck disable=SC2016
 echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc
-mkdir /ccache
-chown nobody:nogroup -R /ccache
-chmod /ccache 777
 
 # Enable RPMFusion repo
 dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm
