@@ -32,5 +32,5 @@ PKGTYPE=${PKGTYPE:="-R"}
 #(cd /builddir/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="gcc -m32" ../wine/configure --with-wine64=../out64 && make -j"$THREADS")
 #cat /builddir/out32/config.log
 # create packages
-(cd /builddir/out32 || exit; checkinstall --install=no --pkgname="wine" --pkgarch="i686" --provides="wine" --pakdir=/exports/out32 $PKGTYPE)
-(cd /builddir/out64 || exit; checkinstall --install=no --pkgname="wine" --pkgarch="x86_64" --provides="wine" --pakdir=/exports/out64 $PKGTYPE)
+(cd /builddir/out32 || exit; checkinstall --install=no --pkgname="wine-league" --pkgarch="i686" --provides="wine-league" --pakdir=/exports/out32 $PKGTYPE)
+(cd /builddir/out64 || exit; checkinstall --install=no --pkgname="wine-league" --pkgarch="x86_64" --provides="wine-league" --pakdir=/exports/out64 $PKGTYPE)
