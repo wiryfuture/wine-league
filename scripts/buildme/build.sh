@@ -25,11 +25,11 @@ PKGTYPE=${PKGTYPE:="-R"}
 # et al
 ####################################
 # 64 bit build process (includes 32 bit. will take about twice the time because.)
-#(cd /builddir/out64 || exit; CC="ccache gcc" ../wine/configure --enable-win64 && make -j"$THREADS")
-(cd /builddir/out64 || exit; CC="gcc" ../wine/configure --enable-win64 && make -j"$THREADS")
+(cd /builddir/out64 || exit; CC="ccache gcc" ../wine/configure --enable-win64 && make -j"$THREADS")
+#(cd /builddir/out64 || exit; CC="gcc" ../wine/configure --enable-win64 && make -j"$THREADS")
 cat /builddir/out64/config.log
-#(cd /builddir/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure --with-wine64=../out64 && make -j"$THREADS")
-(cd /builddir/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="gcc -m32" ../wine/configure --with-wine64=../out64 && make -j"$THREADS")
+(cd /builddir/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure --with-wine64=../out64 && make -j"$THREADS")
+#(cd /builddir/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="gcc -m32" ../wine/configure --with-wine64=../out64 && make -j"$THREADS")
 cat /builddir/out32/config.log
 # create packages
 (cd /builddir/out32 || exit; checkinstall --pkgname="wine" --pkgarch="i686" --provides="wine" --pakdir=/exports/out32 $PKGTYPE)
