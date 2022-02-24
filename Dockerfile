@@ -7,7 +7,6 @@ FROM fedora:latest as bootstrap
 ####################################
 # et al
 ####################################
-USER builder
 WORKDIR /builddir
 COPY scripts/bootstrap.sh scripts/.
 #RUN --mount=type=cache,target=/ccache/
