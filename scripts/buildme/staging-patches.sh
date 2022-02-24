@@ -24,10 +24,10 @@ PATCH_EXCLUDES=${PATCH_EXCLUDES:-""}
 git clone "$STAGING_GIT" /builddir/wine-staging/.
 # Checkout if wine_tag assigned
 if [ "$STAGING_TAG" != "notag" ] ; then
-    cd /builddir/wine-staging && git checkout "$STAGING_TAG"
+    (cd /builddir/wine-staging || exit; git checkout "$STAGING_TAG")
 fi
 
-# Preparation? 
+# Preparation?
 #cd /builddir/wine && git reset --hard HEAD && git clean -xdf
 #cd /builddir/wine-staging && git reset --hard HEAD && git clean -xdf
 

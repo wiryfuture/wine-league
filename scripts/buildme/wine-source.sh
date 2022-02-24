@@ -21,5 +21,5 @@ WINE_TAG=${WINE_TAG:="notag"}
 git clone "$WINE_GIT" /builddir/wine/.
 # Checkout if wine_tag assigned
 if [ "$WINE_TAG" != "notag" ] ; then
-    cd /builddir/wine && git checkout "$WINE_TAG"
+    (cd /builddir/wine || exit; git checkout "$WINE_TAG")
 fi
