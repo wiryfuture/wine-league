@@ -60,7 +60,7 @@ CMD scripts/execute.sh
 #   # docker run -v /folder/for/wine:/exports --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 wiryfuture/wine-league
 #   # podman run -v /folder/for/wine:/exports --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 localhost/wiryfuture/wine-league
 #
-#   # podman run -v /folder/for/wine:/exports -v /folder/for/ccache:/ccache --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 localhost/wiryfuture/wine-league
+#   # podman run -v /folder/for/wine:/exports:Z -v /folder/for/ccache:/ccache:Z --user root --env WINE_TAG=tags/wine-7.0 --env STAGING_TAG=tags/v7.0 localhost/wiryfuture/wine-league
 #
 # Effective debugging command
 # WINEPREFIX=~/Games/league-of-legends WINEARCH=win32 WINEDEBUG=warn+all,+server ./wine "/home/philip/Games/league-of-legends/drive_c/Riot Games/Riot Client/RiotClientServices.exe"  --launch-patchline=live --launch-product=league_of_legends
