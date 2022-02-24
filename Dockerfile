@@ -46,7 +46,7 @@ RUN chmod -R +x scripts/* scripts/*/*
 # ARG PKGTYPE
 
 #  Run build scripts
-CMD scripts/execute.sh && chmod -R 777 /exports
+CMD scripts/execute.sh
 
 # Building this WILL take a while
 # If you mount a dir at /ccache, you will benefit from build caching
