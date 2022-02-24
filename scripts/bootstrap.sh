@@ -14,7 +14,7 @@
 ####################################
 # Install build tools, non-arch dependent
 dnf groupinstall -y "C Development Tools and Libraries" "Development Tools"
-dnf install -y git wget
+dnf install -y git ccache
 
 # Enable RPMFusion repo
 dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm
@@ -35,11 +35,11 @@ dnf install -y https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-releas
 # Packaging deps
 dnf install -y checkinstall
 
-# Get sccache
-wget https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-aarch64-unknown-linux-musl.tar.gz
-tar -xf sccache-v0.2.15-aarch64-unknown-linux-musl.tar.gz
-mv sccache-v0.2.15-aarch64-unknown-linux-musl/sccache ./sccache
-chmod +x ./sccache
+cp ccache /usr/local/bin/
+ln -s ccache /usr/local/bin/gcc
+ln -s ccache /usr/local/bin/g++
+ln -s ccache /usr/local/bin/cc
+ln -s ccache /usr/local/bin/c++
 
 # Create directories for wine source
 mkdir -p /builddir/wine /builddir/out64 /builddir/out32 /builddir/patches /builddir/wine-staging /exports/out32 /exports/out64
