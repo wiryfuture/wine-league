@@ -36,4 +36,4 @@ dnf install -y alsa-plugins-pulseaudio.i686 glibc-devel.i686 glibc-devel libgcc.
 fi
 
 # Create directories for wine source
-mkdir -p /builddir/wine /builddir/out64 /builddir/out32-tools /builddir/patches /builddir/wine-staging /exports/out64 /exports/out32 /exports/out32-tools
+mkdir -p /builddir/wine /builddir/patches /builddir/wine-staging

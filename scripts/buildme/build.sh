@@ -26,16 +26,14 @@ THREADS=${THREADS:=$(nproc)}
 # 64 bit build
 if [ "$x86_64" == 1 ]; then
 # 64 bit build process (includes 32 bit. will take about twice the time because.)
-(cd /builddir/out64 || exit; CC="ccache gcc" ../wine/configure --enable-win64 && make -j"$THREADS")
+(cd /exports/out64 || exit; CC="ccache gcc" ../wine/configure --enable-win64 && make clean && make -j"$THREADS")
 #cat /builddir/out64/config.log
-mv /builddir/out64 /exports/out64
 # 32 bit build
 elif [ "$x86_64" == 0 ]; then
-(cd /builddir/out32-tools || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure && make -j"$THREADS")
-mv /builddir/out32-tools /exports/out32-tools
+(cd /exports/out32-tools || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure && make clean && make -j"$THREADS")
 #cat /builddir/out32/config.log
 # biarch build
 elif [ "$x86_64" == 2 ]; then
-(cd /exports/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure --with-wine64=../out64 --with-wine-tools=../out32-tools && make -j"$THREADS" && make install)
+(cd /exports/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure --with-wine64=../out64 --with-wine-tools=../out32-tools && make -j"$THREADS" && make clean && make install)
 #cat /builddir/out32/config.log
 fi

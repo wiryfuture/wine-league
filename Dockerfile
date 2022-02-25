@@ -33,6 +33,7 @@
 # create 64 bit build
 FROM fedora:latest as x86_64_builder
 WORKDIR /builddir
+RUN mkdir -p /exports/out64 /exports/out32 /exports/out32-tools && chmod -R 777 /exports
 ENV x86_64=1
 COPY scripts/bootstrap.sh scripts/.
 # Prepare environment with tools/deps
@@ -48,6 +49,7 @@ CMD scripts/execute.sh
 # build 32 bit tools
 FROM fedora:latest as xi686_tools_builder
 WORKDIR /builddir
+RUN mkdir -p /exports/out64 /exports/out32 /exports/out32-tools && chmod -R 777 /exports
 ENV x86_64=0
 COPY scripts/bootstrap.sh scripts/.
 # Prepare environment with tools/deps
@@ -63,6 +65,7 @@ CMD scripts/execute.sh
 # build actual 32bit wine w/ 64bit
 FROM fedora:latest as xi686_builder
 WORKDIR /builddir
+RUN mkdir -p /exports/out64 /exports/out32 /exports/out32-tools && chmod -R 777 /exports
 ENV x86_64=2
 COPY scripts/bootstrap.sh scripts/.
 # Prepare environment with tools/deps
