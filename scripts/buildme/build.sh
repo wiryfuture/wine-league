@@ -14,7 +14,7 @@ export CCACHE_UMASK=002
 # int x86_64
 #   # Do 64bit build true/false
 # shellcheck disable=SC2154
-x86_64=${x86_64:=0}
+x86_64=${x86_64:="0"}
 # int THREADS
 #   # How many threads make will use to compile. Defaults to all available.
 # shellcheck disable=SC2154

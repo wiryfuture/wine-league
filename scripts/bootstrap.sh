@@ -10,7 +10,7 @@
 # int x86_64
 #   # Do 64bit build true/false/biarch
 # shellcheck disable=SC2154
-x86_64=${x86_64:=0}
+x86_64=${x86_64:="0"}
 
 ####################################
 # et al
@@ -22,7 +22,7 @@ dnf install -y git ccache
 # Enable RPMFusion repo
 dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm
 
-if [ "$x86_64" == 1 ]; then
+if [ "$x86_64" == "1" ]; then
 #   # Fusion deps
 dnf install -y gstreamer1-devel gstreamer1-plugins-base-tools gstreamer1-doc gstreamer1-plugins-base-devel gstreamer1-plugins-good gstreamer1-plugins-good-extras gstreamer1-plugins-ugly gstreamer1-plugins-bad-free gstreamer1-plugins-bad-free-devel gstreamer1-plugins-bad-free-extras
 #   # Regular Fedora deps
