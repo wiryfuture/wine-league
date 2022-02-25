@@ -11,30 +11,31 @@ export CCACHE_UMASK=002
 ####################################
 # PARAMS
 ####################################
+# int x86_64
+#   # Do 64bit build true/false
+# shellcheck disable=SC2154
+x86_64=${x86_64:=0}
 # int THREADS
 #   # How many threads make will use to compile. Defaults to all available.
 # shellcheck disable=SC2154
 THREADS=${THREADS:=$(nproc)}
-# STRING PKGTYPE
-#   # What packages do we want? Defaults to R for RPM
-#   # Can have "-D" for Debian, "-R" for RPM and "-S" for slackware (who uses that again?)
-# shellcheck disable=SC2154
-PKGTYPE=${PKGTYPE:="-R"}
 
 ####################################
 # et al
 ####################################
-
+# 64 bit build
+if [ "$x86_64" == 1 ]; then
 # 64 bit build process (includes 32 bit. will take about twice the time because.)
 (cd /builddir/out64 || exit; CC="ccache gcc" ../wine/configure --enable-win64 && make -j"$THREADS")
 #cat /builddir/out64/config.log
-(cd /builddir/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure --with-wine64=../out64 && make -j"$THREADS")
-#cat /builddir/out32/config.log
-# move builds out
 mv /builddir/out64 /exports/out64
-mv /builddir/out32 /exports/out32
-mv /builddir/wine /exports/wine
-
-# create packages ?? this is broken asf
-#(cd /builddir/out32 || exit; checkinstall --install=no --pkgname="wine-league" --pkgarch="i686" --provides="wine-league" --pakdir=/exports/out32 $PKGTYPE)
-#(cd /builddir/out64 || exit; checkinstall --install=no --pkgname="wine-league" --pkgarch="x86_64" --provides="wine-league" --pakdir=/exports/out64 $PKGTYPE)
+# 32 bit build
+elif [ "$x86_64" == 0 ]; then
+(cd /builddir/out32-tools || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure && make -j"$THREADS")
+mv /builddir/out32-tools /exports/out32-tools
+#cat /builddir/out32/config.log
+# biarch build
+elif [ "$x86_64" == 2 ]; then
+(cd /exports/out32 || exit; PKG_CONFIG_PATH=/usr/lib/pkgconfig CC="ccache gcc -m32" ../wine/configure --with-wine64=../out64 --with-wine-tools=../out32-tools && make -j"$THREADS" && make install)
+#cat /builddir/out32/config.log
+fi

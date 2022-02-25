@@ -1,24 +1,11 @@
-FROM fedora:latest as bootstrap
 ####################################
 # Desc
 ####################################
 # Fedora container for building WINE using league patches. Should be easy to Modify.
 
 ####################################
-# et al
+# Params
 ####################################
-WORKDIR /builddir
-COPY scripts/bootstrap.sh scripts/.
-#RUN --mount=type=cache,target=/ccache/
-
-# Prepare environment with tools/deps
-RUN scripts/bootstrap.sh
-
-COPY scripts/execute.sh scripts/.
-COPY scripts/buildme scripts/buildme
-COPY patches/. /builddir/patches/
-RUN chmod -R +x scripts/* scripts/*/*
-
 # # git:// WINE_GIT
 # # # Wine repository url
 # ARG WINE_GIT
@@ -40,13 +27,54 @@ RUN chmod -R +x scripts/* scripts/*/*
 # # int THREADS
 # # # How many threads make will use to compile. Defaults to all available.
 # ARG THREADS
-# # STRING PKGTYPE
-# # # What packages do we want? Defaults to R for RPM
-# # # Can have "-D" for Debian, "-R" for RPM and "-S" for slackware (who uses that again?)
-# ARG PKGTYPE
 
+
+
+# create 64 bit build
+FROM fedora:latest as x86_64_builder
+WORKDIR /builddir
+ENV x86_64=1
+COPY scripts/bootstrap.sh scripts/.
+# Prepare environment with tools/deps
+RUN scripts/bootstrap.sh
+# Get wine(staging) sources and build scripts
+COPY scripts/execute.sh scripts/.
+COPY scripts/buildme scripts/buildme
+COPY patches/. /builddir/patches/
+RUN chmod -R +x scripts/* scripts/*/*
 #  Run build scripts
 CMD scripts/execute.sh
+
+# build 32 bit tools
+FROM fedora:latest as xi686_tools_builder
+WORKDIR /builddir
+ENV x86_64=0
+COPY scripts/bootstrap.sh scripts/.
+# Prepare environment with tools/deps
+RUN scripts/bootstrap.sh
+# Get wine(staging) sources and build scripts
+COPY scripts/execute.sh scripts/.
+COPY scripts/buildme scripts/buildme
+COPY patches/. /builddir/patches/
+RUN chmod -R +x scripts/* scripts/*/*
+#  Run build scripts
+CMD scripts/execute.sh
+
+# build actual 32bit wine w/ 64bit
+FROM fedora:latest as xi686_builder
+WORKDIR /builddir
+ENV x86_64=2
+COPY scripts/bootstrap.sh scripts/.
+# Prepare environment with tools/deps
+RUN scripts/bootstrap.sh
+# Get wine(staging) sources and build scripts
+COPY scripts/execute.sh scripts/.
+COPY scripts/buildme scripts/buildme
+COPY patches/. /builddir/patches/
+RUN chmod -R +x scripts/* scripts/*/*
+#  Run build scripts
+CMD scripts/execute.sh
+
 
 # Building this WILL take a while
 # If you mount a dir at /ccache, you will benefit from build caching
